@@ -104,7 +104,6 @@
 <style>
     body { background-color: #131313; color: #e5e2e1; font-family: 'Geist', sans-serif; }
     
-    /* Gentle ambient breathing glow */
     @keyframes heroBreathe {
         0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
         50% { transform: translate(-50%, -50%) scale(1.12); opacity: 0.95; }
@@ -126,7 +125,6 @@
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
 
-    /* Scroll reveal mechanics */
     .reveal-on-scroll {
         opacity: 0;
         transform: translateY(16px);
@@ -138,7 +136,6 @@
         transform: translateY(0);
     }
 
-    /* Spring-loaded confirmation reveal */
     @keyframes springSuccess {
         0% { transform: scale(0.96) translateY(6px); opacity: 0; }
         60% { transform: scale(1.015) translateY(-1px); opacity: 1; }
@@ -148,7 +145,6 @@
         animation: springSuccess 420ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
 
-    /* Code tab slide-fade transition */
     .code-pane {
         transition: opacity 220ms cubic-bezier(0.23, 1, 0.32, 1), transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
     }
@@ -157,7 +153,6 @@
         transform: translateY(4px);
     }
 
-    /* Shimmer ribbon */
     @keyframes shimmer {
         0% { background-position: -200% 0; }
         100% { background-position: 200% 0; }
@@ -176,8 +171,7 @@
 
 <!-- TopNavBar -->
 <nav class="fixed top-0 w-full z-40 flex justify-between items-center px-container-padding py-4 max-w-[1280px] mx-auto bg-background/80 backdrop-blur-md border-b border-outline-variant/30 left-1/2 -translate-x-1/2">
-    <a class="font-headline-sm text-headline-sm font-bold text-primary tracking-tighter flex items-center gap-2" href="#">
-        <span class="w-6 h-6 rounded-md bg-white text-surface-container-lowest flex items-center justify-center font-code-md text-xs font-bold shadow-sm">k</span>
+    <a class="text-2xl font-bold text-primary tracking-tighter" href="#">
         keyed
     </a>
     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 font-label-sm text-label-sm text-on-surface-variant badge-shimmer">
@@ -212,27 +206,12 @@
                 </button>
             </form>
 
-            <!-- Interactive Terminal Success Card (Animated Spring) -->
-            <div id="success-box" class="hidden text-left bg-[#0A0A0A] border border-[#14532D] rounded-xl p-5 shadow-[0_0_35px_rgba(78,222,163,0.12)] animate-spring-success">
-                <div class="flex items-center justify-between border-b border-[#1A3324] pb-3 mb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping"></div>
-                        <span class="font-code-md text-xs text-[#4edea3] font-semibold tracking-wide">$ keyed auth --enrolled</span>
-                    </div>
-                    <span class="font-label-sm text-[11px] px-2 py-0.5 rounded bg-[#052E16] text-[#4edea3] border border-[#14532D]">FOUNDER DEAL RESERVED</span>
-                </div>
-                <div class="space-y-1.5 font-code-md text-xs text-[#c4c7c8]">
-                    <p class="text-white font-medium flex items-center gap-1.5">
-                        <span class="text-[#4edea3]">✓</span> <span id="user-registered-email">You're on the early access list.</span>
-                    </p>
-                    <p class="text-outline-variant text-[11px]">→ Founding member Lifetime Deal invitation reserved for your email.</p>
-                    <p class="text-outline-variant text-[11px]">→ Zero spam before then. You only get an email when early SDK access opens.</p>
-                </div>
+            <!-- Clean Success Message -->
+            <div id="success-box" class="hidden text-center bg-[#052E16] border border-[#14532D] text-[#4edea3] rounded-lg p-4 font-body-md shadow-lg animate-spring-success">
+                <p class="font-medium flex items-center justify-center gap-2 text-white text-base">
+                    <span class="text-[#4edea3] text-lg font-bold">✓</span> You're on the waitlist. We'll email you when it ships.
+                </p>
             </div>
-
-            <p id="form-note" class="mt-4 font-label-sm text-label-sm text-outline flex items-center justify-center gap-1 text-xs sm:text-sm">
-                <span class="material-symbols-outlined text-[14px]">lock</span> One-time payment at launch. No recurring subscription, ever.
-            </p>
         </div>
     </div>
 
@@ -428,19 +407,12 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
 
 <!-- Footer -->
 <footer class="w-full px-container-padding py-stack-gap-lg flex flex-col md:flex-row justify-between items-center gap-stack-gap-md max-w-[1280px] mx-auto border-t border-outline-variant/20 bg-background">
-    <div class="flex items-center gap-2">
-        <span class="w-5 h-5 rounded bg-white text-surface-container-lowest flex items-center justify-center font-code-md text-[10px] font-bold">k</span>
-        <span class="font-headline-sm text-headline-sm font-bold text-primary">keyed</span>
+    <div class="text-2xl font-bold text-primary tracking-tighter">
+        keyed
     </div>
-    <p class="font-label-sm text-label-sm text-on-surface-variant text-center md:text-left">
-        &copy; 2025 keyed &bull; API keys done right, once.
+    <p class="font-label-sm text-label-sm text-on-surface-variant text-center md:text-right">
+        &copy; 2026 keyed &bull; API keys done right, once.
     </p>
-    <div class="flex gap-4">
-        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Privacy</a>
-        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Terms</a>
-        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="https://x.com/" target="_blank" rel="noopener">Twitter</a>
-        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="https://github.com/Kreesten-hsh/keyed" target="_blank" rel="noopener">GitHub</a>
-    </div>
 </footer>
 
 <script>
@@ -523,13 +495,10 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
     const form = document.getElementById('waitlist-form');
     const submitBtn = document.getElementById('submit-btn');
     const successBox = document.getElementById('success-box');
-    const formNote = document.getElementById('form-note');
-    const userEmailSpan = document.getElementById('user-registered-email');
     const emailInput = document.getElementById('email-input');
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        const submittedEmail = emailInput.value.trim();
 
         submitBtn.disabled = true;
         submitBtn.innerHTML = `
@@ -546,13 +515,7 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
             if (!res.ok) throw new Error(res.status);
             
             form.classList.add('hidden');
-            formNote.classList.add('hidden');
-            
-            if (submittedEmail && userEmailSpan) {
-                userEmailSpan.textContent = `Enrolled: ${submittedEmail}`;
-            }
             successBox.classList.remove('hidden');
-            
             launchConfetti();
         })
         .catch(function(err) {
@@ -561,9 +524,7 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
                 <span>Get Early Access</span>
                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
             `;
-            formNote.textContent = 'Network issue. Please try again.';
-            formNote.classList.remove('text-outline');
-            formNote.classList.add('text-red-400');
+            alert('Something went wrong. Please try again.');
         });
     });
 
