@@ -1,499 +1,281 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>keyed — API key auth without the platform</title>
-<meta name="description" content="Hash, scope, rate-limit and revoke API keys. 3 lines of code. Pay once.">
-<meta property="og:title" content="keyed — API key auth without the platform">
-<meta property="og:description" content="Hash, scope, rate-limit and revoke API keys. 3 lines of code. Pay once.">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>keyed — API keys, done right, once.</title>
+<meta name="description" content="Hash, revoke, and rate-limit in 3 lines of code. No subscriptions, no gateway bloat. Built for indie hackers and autonomous AI agents."/>
+<meta property="og:title" content="keyed — API keys, done right, once."/>
+<meta property="og:description" content="Hash, revoke, and rate-limit in 3 lines of code. No subscriptions, no gateway bloat. Just security that lasts forever."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Satoshi:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "inverse-surface": "#e5e2e1",
+                    "background": "#131313",
+                    "surface-dim": "#131313",
+                    "secondary": "#adc6ff",
+                    "tertiary": "#ffffff",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-container": "#6ffbbe",
+                    "on-secondary-fixed-variant": "#004395",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "inverse-primary": "#5d5f5f",
+                    "on-secondary": "#002e6a",
+                    "surface-container-lowest": "#0e0e0e",
+                    "tertiary-fixed": "#6ffbbe",
+                    "surface-container-high": "#2a2a2a",
+                    "surface-container-highest": "#353534",
+                    "primary-fixed-dim": "#c6c6c7",
+                    "on-background": "#e5e2e1",
+                    "primary": "#ffffff",
+                    "inverse-on-surface": "#313030",
+                    "outline-variant": "#444748",
+                    "outline": "#8e9192",
+                    "error": "#ffb4ab",
+                    "on-primary-fixed-variant": "#454747",
+                    "on-primary": "#2f3131",
+                    "on-error": "#690005",
+                    "surface": "#131313",
+                    "secondary-container": "#0566d9",
+                    "on-tertiary": "#003824",
+                    "on-surface-variant": "#c4c7c8",
+                    "on-tertiary-container": "#00734e",
+                    "primary-container": "#e2e2e2",
+                    "on-tertiary-fixed": "#002113",
+                    "on-secondary-fixed": "#001a42",
+                    "surface-bright": "#3a3939",
+                    "on-surface": "#e5e2e1",
+                    "primary-fixed": "#e2e2e2",
+                    "on-secondary-container": "#e6ecff",
+                    "surface-container-low": "#1c1b1b",
+                    "on-primary-fixed": "#1a1c1c",
+                    "surface-container": "#201f1f",
+                    "secondary-fixed": "#d8e2ff",
+                    "surface-variant": "#353534",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "surface-tint": "#c6c6c7",
+                    "on-primary-container": "#636565",
+                    "error-container": "#93000a"
+                },
+                borderRadius: {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "9999px"
+                },
+                spacing: {
+                    "unit": "4px",
+                    "stack-gap-md": "16px",
+                    "stack-gap-lg": "32px",
+                    "stack-gap-sm": "8px",
+                    "container-padding": "24px",
+                    "gutter": "16px"
+                },
+                fontFamily: {
+                    "code-md": ["JetBrains Mono", "monospace"],
+                    "headline-sm": ["Geist", "sans-serif"],
+                    "body-md": ["Geist", "sans-serif"],
+                    "display-lg": ["Geist", "sans-serif"],
+                    "body-lg": ["Geist", "sans-serif"],
+                    "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-md": ["Geist", "sans-serif"]
+                },
+                fontSize: {
+                    "code-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                    "headline-sm": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                    "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                    "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                    "headline-md": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                }
+            }
+        }
+    }
+</script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-:root{
-  --white:#FAFAF9;
-  --gray-50:#F5F5F4;
-  --gray-100:#E7E5E4;
-  --gray-200:#D6D3D1;
-  --gray-400:#A8A29E;
-  --gray-500:#78716C;
-  --gray-600:#57534E;
-  --gray-700:#44403C;
-  --gray-800:#292524;
-  --gray-900:#1C1917;
-  --gray-950:#0C0A09;
-  --green:#16A34A;
-  --green-bg:#052E16;
-  --green-border:#14532D;
-  --mono:'IBM Plex Mono',ui-monospace,monospace;
-  --sans:'Satoshi',system-ui,-apple-system,sans-serif;
-}
-
-html{
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  text-rendering:optimizeLegibility;
-}
-
-body{
-  background:var(--gray-950);
-  color:var(--gray-400);
-  font-family:var(--sans);
-  font-size:15px;
-  line-height:1.6;
-  min-height:100dvh;
-}
-
-a{color:inherit;text-decoration:none}
-
-/* ── Container ── */
-.container{
-  max-width:680px;
-  margin:0 auto;
-  padding:0 24px;
-}
-
-/* ── Header ── */
-header{
-  padding:28px 0;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-bottom:1px solid var(--gray-800);
-}
-
-.logo{
-  font-family:var(--mono);
-  font-weight:500;
-  font-size:14px;
-  color:var(--white);
-  letter-spacing:-0.02em;
-}
-
-.tag{
-  font-family:var(--mono);
-  font-size:11px;
-  color:var(--green);
-  background:var(--green-bg);
-  border:1px solid var(--green-border);
-  padding:3px 8px;
-  border-radius:4px;
-  letter-spacing:0.02em;
-}
-
-/* ── Hero ── */
-.hero{
-  padding:80px 0 64px;
-}
-
-h1{
-  font-family:var(--sans);
-  font-size:clamp(32px,6vw,48px);
-  font-weight:700;
-  color:var(--white);
-  line-height:1.1;
-  letter-spacing:-0.035em;
-  margin-bottom:24px;
-  max-width:560px;
-}
-
-.hero p{
-  font-size:17px;
-  color:var(--gray-500);
-  max-width:460px;
-  line-height:1.65;
-  margin-bottom:40px;
-}
-
-/* ── Form ── */
-.form-row{
-  display:flex;
-  gap:8px;
-  max-width:420px;
-}
-
-.form-row input{
-  flex:1;
-  appearance:none;
-  background:var(--gray-900);
-  border:1px solid var(--gray-800);
-  color:var(--white);
-  font-family:var(--sans);
-  font-size:14px;
-  padding:11px 14px;
-  border-radius:6px;
-  outline:none;
-  transition:border-color .15s ease;
-}
-
-.form-row input::placeholder{color:var(--gray-600)}
-
-.form-row input:focus{
-  border-color:var(--gray-600);
-}
-
-.form-row button{
-  appearance:none;
-  background:var(--white);
-  color:var(--gray-950);
-  font-family:var(--sans);
-  font-weight:500;
-  font-size:14px;
-  padding:11px 20px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  white-space:nowrap;
-  transition:opacity .15s ease,transform .12s ease;
-}
-
-.form-row button:hover{opacity:.88}
-.form-row button:active{transform:scale(.97)}
-.form-row button:focus-visible{outline:2px solid var(--white);outline-offset:2px}
-
-.form-note{
-  margin-top:12px;
-  font-size:12px;
-  color:var(--gray-600);
-  font-family:var(--mono);
-}
-
-.success-msg{
-  display:none;
-  font-family:var(--mono);
-  font-size:13px;
-  color:var(--green);
-  padding:12px 14px;
-  background:var(--green-bg);
-  border:1px solid var(--green-border);
-  border-radius:6px;
-  max-width:420px;
-}
-
-.success-msg.show{display:block}
-form.hide{display:none}
-.form-note.hide{display:none}
-
-/* ── Code block ── */
-.code-section{
-  padding:56px 0;
-  border-top:1px solid var(--gray-800);
-}
-
-.code-section h2{
-  font-family:var(--sans);
-  font-size:14px;
-  font-weight:500;
-  color:var(--gray-500);
-  margin-bottom:20px;
-  letter-spacing:-0.01em;
-}
-
-.code-block{
-  background:var(--gray-900);
-  border:1px solid var(--gray-800);
-  border-radius:8px;
-  overflow:hidden;
-}
-
-.code-tabs{
-  display:flex;
-  border-bottom:1px solid var(--gray-800);
-}
-
-.code-tab{
-  font-family:var(--mono);
-  font-size:12px;
-  color:var(--gray-500);
-  padding:10px 16px;
-  border-right:1px solid var(--gray-800);
-  cursor:default;
-}
-
-.code-tab.active{
-  color:var(--white);
-  background:rgba(250,250,249,.03);
-}
-
-pre{
-  padding:20px;
-  overflow-x:auto;
-  font-family:var(--mono);
-  font-size:13px;
-  line-height:1.75;
-  color:var(--gray-400);
-  -webkit-overflow-scrolling:touch;
-}
-
-pre .kw{color:#C084FC}
-pre .fn{color:#60A5FA}
-pre .str{color:#86EFAC}
-pre .cm{color:var(--gray-700);font-style:italic}
-pre .op{color:var(--gray-500)}
-pre .br{color:var(--gray-600)}
-
-/* ── Differentiators ── */
-.diff-section{
-  padding:56px 0;
-  border-top:1px solid var(--gray-800);
-}
-
-.diff-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:1px;
-  background:var(--gray-800);
-  border:1px solid var(--gray-800);
-  border-radius:8px;
-  overflow:hidden;
-}
-
-.diff-item{
-  background:var(--gray-950);
-  padding:28px 24px;
-}
-
-.diff-item h3{
-  font-family:var(--sans);
-  font-size:14px;
-  font-weight:500;
-  color:var(--white);
-  margin-bottom:8px;
-}
-
-.diff-item p{
-  font-size:13px;
-  color:var(--gray-500);
-  line-height:1.55;
-}
-
-/* ── Compare ── */
-.compare-section{
-  padding:56px 0;
-  border-top:1px solid var(--gray-800);
-}
-
-.compare-section h2{
-  font-family:var(--sans);
-  font-size:14px;
-  font-weight:500;
-  color:var(--gray-500);
-  margin-bottom:20px;
-}
-
-.compare-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:13px;
-}
-
-.compare-table th{
-  text-align:left;
-  font-family:var(--mono);
-  font-weight:400;
-  font-size:11px;
-  color:var(--gray-600);
-  padding:0 0 12px;
-  text-transform:uppercase;
-  letter-spacing:.06em;
-}
-
-.compare-table td{
-  padding:10px 0;
-  border-top:1px solid var(--gray-800);
-  color:var(--gray-500);
-  vertical-align:top;
-}
-
-.compare-table td:first-child{
-  color:var(--gray-400);
-  font-family:var(--mono);
-  font-size:12px;
-  width:35%;
-  padding-right:16px;
-}
-
-.compare-table td:nth-child(2){
-  color:var(--white);
-  font-weight:500;
-}
-
-/* ── Footer ── */
-footer{
-  padding:32px 0;
-  border-top:1px solid var(--gray-800);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-family:var(--mono);
-  font-size:11px;
-  color:var(--gray-700);
-}
-
-footer a{
-  color:var(--gray-500);
-  transition:color .15s ease;
-}
-
-footer a:hover{color:var(--white)}
-
-/* ── Responsive ── */
-@media(max-width:540px){
-  .hero{padding:56px 0 48px}
-  h1{font-size:30px}
-  .form-row{flex-direction:column}
-  .form-row button{width:100%}
-  .diff-grid{grid-template-columns:1fr}
-  .compare-table td:first-child{width:40%}
-  .code-section,.diff-section,.compare-section{padding:40px 0}
-}
-
-@media(prefers-reduced-motion:reduce){
-  *{transition-duration:.01ms !important}
-}
+    body { background-color: #131313; color: #e5e2e1; font-family: 'Geist', sans-serif; }
+    .hero-glow {
+        background: radial-gradient(circle at center, rgba(111, 251, 190, 0.08) 0%, rgba(19, 19, 19, 0) 65%);
+        z-index: 0;
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
 </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col selection:bg-tertiary-fixed-dim selection:text-surface-container-lowest">
 
-<div class="container">
-
-  <header>
-    <span class="logo">keyed</span>
-    <span class="tag">pre-launch</span>
-  </header>
-
-  <section class="hero">
-    <h1>API key auth without the platform.</h1>
-    <p>You needed to issue keys, hash them, and let users revoke them. You got a gateway, a dashboard, and a monthly bill. This fixes that.</p>
-
-    <form id="wl" class="form-row" action="https://formspree.io/f/mqpkzwyn" method="POST">
-      <input type="email" name="email" placeholder="you@project.dev" required aria-label="Email" autocomplete="email">
-      <button type="submit">Join waitlist</button>
-    </form>
-    <p class="form-note" id="fn">One-time payment at launch. No subscription, no spam.</p>
-    <div class="success-msg" id="ok">You're on the list. I'll email when it ships.</div>
-  </section>
-
-  <section class="code-section">
-    <h2>That's the whole integration.</h2>
-    <div class="code-block">
-      <div class="code-tabs">
-        <span class="code-tab active">middleware.ts</span>
-      </div>
-<pre><span class="kw">import</span> <span class="br">{</span> <span class="fn">keyed</span> <span class="br">}</span> <span class="kw">from</span> <span class="str">"@keyed/node"</span>
-
-<span class="kw">const</span> auth <span class="op">=</span> <span class="fn">keyed</span><span class="br">(</span><span class="str">"sk_proj_..."</span><span class="br">)</span>
-
-<span class="cm">// verify incoming request</span>
-<span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> auth<span class="op">.</span><span class="fn">verify</span><span class="br">(</span>req<span class="op">.</span>headers<span class="op">.</span>authorization<span class="br">)</span>
-
-<span class="kw">if</span> <span class="br">(</span><span class="op">!</span>result<span class="op">.</span>valid<span class="br">)</span> <span class="kw">return</span> <span class="fn">Response</span><span class="op">.</span><span class="fn">json</span><span class="br">(</span>
-  <span class="br">{</span> error<span class="op">:</span> result<span class="op">.</span>code <span class="br">}</span><span class="op">,</span>
-  <span class="br">{</span> status<span class="op">:</span> <span class="str">401</span> <span class="br">}</span>
-<span class="br">)</span></pre>
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-container-padding py-4 max-w-[1280px] mx-auto bg-background/80 backdrop-blur-md border-b border-outline-variant/30 left-1/2 -translate-x-1/2">
+    <a class="font-headline-sm text-headline-sm font-bold text-primary tracking-tighter" href="#">keyed</a>
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 font-label-sm text-label-sm text-on-surface-variant">
+        <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span> pre-launch
     </div>
-  </section>
+</nav>
 
-  <section class="diff-section">
-    <div class="diff-grid">
-      <div class="diff-item">
-        <h3>Hashed at rest</h3>
-        <p>Keys are bcrypt-hashed before storage. The raw key is shown once, then gone.</p>
-      </div>
-      <div class="diff-item">
-        <h3>Scoped &amp; time-bound</h3>
-        <p>Set read/write permissions and a TTL. Keys expire on their own.</p>
-      </div>
-      <div class="diff-item">
-        <h3>Rate limiting built in</h3>
-        <p>Per-key rate limits. No separate service, no extra config.</p>
-      </div>
-      <div class="diff-item">
-        <h3>Revoke in one call</h3>
-        <p>Kill a compromised key instantly. No dashboard hunting.</p>
-      </div>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center justify-center pt-32 pb-24 px-container-padding relative overflow-hidden">
+    <!-- Hero Glow -->
+    <div class="hero-glow absolute inset-0 w-full h-[800px] pointer-events-none"></div>
+
+    <!-- Hero Section -->
+    <div class="max-w-[800px] text-center mb-stack-gap-lg flex flex-col items-center z-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 mb-6 font-label-sm text-label-sm text-on-surface-variant">
+            <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> Built for the NHI economy
+        </div>
+        <h1 class="font-display-lg text-display-lg text-primary mb-6 drop-shadow-sm text-4xl sm:text-5xl md:text-[48px]">API keys, done right, once.</h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-[600px] mx-auto mb-10 leading-relaxed text-base sm:text-lg">
+            Hash, revoke, and rate-limit in 3 lines of code. No subscriptions, no gateway bloat. Just security that lasts forever.
+        </p>
+
+        <!-- Waitlist Form -->
+        <div class="w-full max-w-md mx-auto">
+            <form id="waitlist-form" action="https://formspree.io/f/mqpkzwyn" method="POST" class="flex flex-col sm:flex-row gap-2 relative">
+                <input id="email-input" name="email" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 font-body-md text-primary placeholder:text-outline focus:outline-none focus:border-tertiary-fixed focus:ring-1 focus:ring-tertiary-fixed transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" placeholder="Enter your email" required type="email" autocomplete="email"/>
+                <button id="submit-btn" class="bg-primary text-surface-container-lowest font-body-md font-medium px-6 py-3 rounded-lg hover:bg-primary-container transition-all whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95" type="submit">
+                    Join Waitlist
+                </button>
+            </form>
+            <div id="success-msg" class="hidden mt-4 p-3.5 bg-[#052E16] border border-[#14532D] text-[#4edea3] rounded-lg font-label-sm text-sm text-center">
+                $ subscribed → You're on the list. We'll email you when it ships.
+            </div>
+            <p id="form-note" class="mt-4 font-label-sm text-label-sm text-outline flex items-center justify-center gap-1 text-xs sm:text-sm">
+                <span class="material-symbols-outlined text-[14px]">info</span> Limited lifetime deals available at launch.
+            </p>
+        </div>
     </div>
-  </section>
 
-  <section class="compare-section">
-    <h2>Why not just use the others?</h2>
-    <table class="compare-table">
-      <thead>
-        <tr>
-          <th></th>
-          <th>keyed</th>
-          <th>Platforms</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Pricing</td>
-          <td>Pay once</td>
-          <td>$20-50/mo</td>
-        </tr>
-        <tr>
-          <td>Setup</td>
-          <td>npm install + 3 lines</td>
-          <td>Gateway, DNS, dashboard</td>
-        </tr>
-        <tr>
-          <td>Lock-in</td>
-          <td>None, keys are yours</td>
-          <td>Vendor-managed infra</td>
-        </tr>
-        <tr>
-          <td>Target</td>
-          <td>Solo devs, side projects</td>
-          <td>Engineering teams</td>
-        </tr>
-        <tr>
-          <td>AI agent keys</td>
-          <td>Scoped, short-lived, revocable</td>
-          <td>Enterprise NHI audit</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+    <!-- 3 Lines of Code Section -->
+    <div class="w-full max-w-[800px] mt-12 z-10">
+        <div class="bg-[#000000] border border-[#1F1F1F] rounded-xl overflow-hidden shadow-2xl relative group">
+            <!-- Window Controls -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-[#1F1F1F] bg-[#0A0A0A]">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#333]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#333]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#333]"></div>
+                    <span class="ml-4 font-label-sm text-label-sm text-[#666]">middleware.ts</span>
+                </div>
+                <button id="copy-btn" class="text-[#666] hover:text-primary transition-colors p-1.5 rounded-md hover:bg-[#1A1A1A] flex items-center gap-1 font-label-sm text-xs" title="Copy code">
+                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                    <span id="copy-text">copy</span>
+                </button>
+            </div>
+            <!-- Code -->
+            <div class="p-6 overflow-x-auto relative">
+                <pre class="font-code-md text-code-md leading-loose"><code id="code-content" class="text-[#e5e2e1]"><span class="text-[#c678dd]">import</span> { keyed } <span class="text-[#c678dd]">from</span> <span class="text-[#98c379]">'@keyed/sdk'</span>;
 
-  <footer>
-    <span>&copy; 2025 keyed</span>
-    <a href="https://x.com/" target="_blank" rel="noopener">@keyed</a>
-  </footer>
+<span class="text-[#c678dd]">const</span> vault = <span class="text-[#e5c07b]">new</span> <span class="text-[#61afef]">keyed</span>(process.env.<span class="text-[#e06c75]">KEYED_SECRET</span>);
 
-</div>
+<span class="text-[#5c6370]">/* That's it. You're secure. */</span>
+<span class="text-[#c678dd]">const</span> { valid, limit } = <span class="text-[#c678dd]">await</span> vault.<span class="text-[#61afef]">verify</span>(req.headers[<span class="text-[#98c379]">'x-api-key'</span>]);
+<span class="text-[#c678dd]">if</span> (!valid) <span class="text-[#c678dd]">return</span> <span class="text-[#e5c07b]">new</span> <span class="text-[#61afef]">Response</span>(<span class="text-[#98c379]">'Unauthorized'</span>, { status: <span class="text-[#d19a66]">401</span> });</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Bento Grid -->
+    <div class="w-full max-w-[1000px] mt-32 z-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Feature 1: Pay Once -->
+        <div class="bg-surface-container-low border-[2px] border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between h-full relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/10 to-[#10B981]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div>
+                <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6">
+                    <span class="material-symbols-outlined text-tertiary-fixed-dim">credit_card_off</span>
+                </div>
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">Pay Once, Own Forever</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">Kill your monthly SaaS bill. A single payment secures your infrastructure indefinitely. No recurring fees.</p>
+            </div>
+        </div>
+        <!-- Feature 2: Zero-Bloat -->
+        <div class="bg-[#141414] border border-[#1F1F1F] rounded-xl p-8 flex flex-col justify-between h-full hover:bg-[#1A1A1A] transition-colors duration-300">
+            <div>
+                <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6">
+                    <span class="material-symbols-outlined text-primary">speed</span>
+                </div>
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">Zero-Bloat Integration</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">No complex gateways or enterprise proxies to manage. Designed for minimal footprint and maximum speed.</p>
+            </div>
+        </div>
+        <!-- Feature 3: AI Agent -->
+        <div class="bg-[#141414] border border-[#1F1F1F] rounded-xl p-8 flex flex-col justify-between h-full hover:bg-[#1A1A1A] transition-colors duration-300">
+            <div>
+                <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6">
+                    <span class="material-symbols-outlined text-primary">smart_toy</span>
+                </div>
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">AI Agent Optimized</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">Generate scoped, short-lived keys programmatically. Perfect for autonomous LLM agents executing specific tasks.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full px-container-padding py-stack-gap-lg flex flex-col md:flex-row justify-between items-center gap-stack-gap-md max-w-[1280px] mx-auto border-t border-outline-variant/20 bg-background">
+    <div class="font-headline-sm text-headline-sm font-bold text-primary">keyed</div>
+    <p class="font-label-sm text-label-sm text-on-surface-variant text-center md:text-left">
+        © 2025 keyed. One-time payment, lifetime security.
+    </p>
+    <div class="flex gap-4">
+        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Privacy</a>
+        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Terms</a>
+        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="https://x.com/" target="_blank" rel="noopener">Twitter</a>
+        <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-tertiary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="https://github.com/Kreesten-hsh/keyed" target="_blank" rel="noopener">GitHub</a>
+    </div>
+</footer>
 
 <script>
-const f=document.getElementById('wl'),
-      btn=f.querySelector('button'),
-      n=document.getElementById('fn'),
-      ok=document.getElementById('ok');
+    // Form submission via fetch to Formspree
+    const form = document.getElementById('waitlist-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const successMsg = document.getElementById('success-msg');
+    const formNote = document.getElementById('form-note');
 
-f.addEventListener('submit',e=>{
-  e.preventDefault();
-  btn.disabled=true;
-  btn.textContent='Sending...';
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
 
-  fetch(f.action,{
-    method:'POST',
-    body:new FormData(f),
-    headers:{'Accept':'application/json'}
-  })
-  .then(r=>{
-    if(!r.ok) throw new Error(r.status);
-    f.classList.add('hide');
-    n.classList.add('hide');
-    ok.classList.add('show');
-  })
-  .catch(()=>{
-    btn.disabled=false;
-    btn.textContent='Join waitlist';
-    n.textContent='Something went wrong. Try again.';
-    n.style.color='#EF4444';
-  });
-});
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error(res.status);
+            form.classList.add('hidden');
+            formNote.classList.add('hidden');
+            successMsg.classList.remove('hidden');
+        })
+        .catch(function(err) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Join Waitlist';
+            formNote.textContent = 'Something went wrong. Please try again.';
+            formNote.classList.remove('text-outline');
+            formNote.classList.add('text-red-400');
+        });
+    });
+
+    // Copy code snippet functionality
+    const copyBtn = document.getElementById('copy-btn');
+    const copyText = document.getElementById('copy-text');
+    const rawCode = `import { keyed } from '@keyed/sdk';\n\nconst vault = new keyed(process.env.KEYED_SECRET);\n\n/* That's it. You're secure. */\nconst { valid, limit } = await vault.verify(req.headers['x-api-key']);\nif (!valid) return new Response('Unauthorized', { status: 401 });`;
+
+    copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(rawCode).then(function() {
+            copyText.textContent = 'copied!';
+            setTimeout(function() { copyText.textContent = 'copy'; }, 2000);
+        });
+    });
 </script>
 
 </body>
