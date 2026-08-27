@@ -1,2 +1,7 @@
 *.pdf
 .DS_Store
+*.db
+data/
+docker-compose.n8n.yml
+start_n8n.sh
+hf-n8n/
