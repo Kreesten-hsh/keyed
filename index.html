@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>keyed — API key auth without the platform</title>
+<meta name="description" content="Hash, scope, rate-limit and revoke API keys. 3 lines of code. Pay once.">
+<meta property="og:title" content="keyed — API key auth without the platform">
+<meta property="og:description" content="Hash, scope, rate-limit and revoke API keys. 3 lines of code. Pay once.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Satoshi:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --white:#FAFAF9;
+  --gray-50:#F5F5F4;
+  --gray-100:#E7E5E4;
+  --gray-200:#D6D3D1;
+  --gray-400:#A8A29E;
+  --gray-500:#78716C;
+  --gray-600:#57534E;
+  --gray-700:#44403C;
+  --gray-800:#292524;
+  --gray-900:#1C1917;
+  --gray-950:#0C0A09;
+  --green:#16A34A;
+  --green-bg:#052E16;
+  --green-border:#14532D;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Satoshi',system-ui,-apple-system,sans-serif;
+}
+
+html{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+
+body{
+  background:var(--gray-950);
+  color:var(--gray-400);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100dvh;
+}
+
+a{color:inherit;text-decoration:none}
+
+/* ── Container ── */
+.container{
+  max-width:680px;
+  margin:0 auto;
+  padding:0 24px;
+}
+
+/* ── Header ── */
+header{
+  padding:28px 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid var(--gray-800);
+}
+
+.logo{
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:14px;
+  color:var(--white);
+  letter-spacing:-0.02em;
+}
+
+.tag{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--green);
+  background:var(--green-bg);
+  border:1px solid var(--green-border);
+  padding:3px 8px;
+  border-radius:4px;
+  letter-spacing:0.02em;
+}
+
+/* ── Hero ── */
+.hero{
+  padding:80px 0 64px;
+}
+
+h1{
+  font-family:var(--sans);
+  font-size:clamp(32px,6vw,48px);
+  font-weight:700;
+  color:var(--white);
+  line-height:1.1;
+  letter-spacing:-0.035em;
+  margin-bottom:24px;
+  max-width:560px;
+}
+
+.hero p{
+  font-size:17px;
+  color:var(--gray-500);
+  max-width:460px;
+  line-height:1.65;
+  margin-bottom:40px;
+}
+
+/* ── Form ── */
+.form-row{
+  display:flex;
+  gap:8px;
+  max-width:420px;
+}
+
+.form-row input{
+  flex:1;
+  appearance:none;
+  background:var(--gray-900);
+  border:1px solid var(--gray-800);
+  color:var(--white);
+  font-family:var(--sans);
+  font-size:14px;
+  padding:11px 14px;
+  border-radius:6px;
+  outline:none;
+  transition:border-color .15s ease;
+}
+
+.form-row input::placeholder{color:var(--gray-600)}
+
+.form-row input:focus{
+  border-color:var(--gray-600);
+}
+
+.form-row button{
+  appearance:none;
+  background:var(--white);
+  color:var(--gray-950);
+  font-family:var(--sans);
+  font-weight:500;
+  font-size:14px;
+  padding:11px 20px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:opacity .15s ease,transform .12s ease;
+}
+
+.form-row button:hover{opacity:.88}
+.form-row button:active{transform:scale(.97)}
+.form-row button:focus-visible{outline:2px solid var(--white);outline-offset:2px}
+
+.form-note{
+  margin-top:12px;
+  font-size:12px;
+  color:var(--gray-600);
+  font-family:var(--mono);
+}
+
+.success-msg{
+  display:none;
+  font-family:var(--mono);
+  font-size:13px;
+  color:var(--green);
+  padding:12px 14px;
+  background:var(--green-bg);
+  border:1px solid var(--green-border);
+  border-radius:6px;
+  max-width:420px;
+}
+
+.success-msg.show{display:block}
+form.hide{display:none}
+.form-note.hide{display:none}
+
+/* ── Code block ── */
+.code-section{
+  padding:56px 0;
+  border-top:1px solid var(--gray-800);
+}
+
+.code-section h2{
+  font-family:var(--sans);
+  font-size:14px;
+  font-weight:500;
+  color:var(--gray-500);
+  margin-bottom:20px;
+  letter-spacing:-0.01em;
+}
+
+.code-block{
+  background:var(--gray-900);
+  border:1px solid var(--gray-800);
+  border-radius:8px;
+  overflow:hidden;
+}
+
+.code-tabs{
+  display:flex;
+  border-bottom:1px solid var(--gray-800);
+}
+
+.code-tab{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--gray-500);
+  padding:10px 16px;
+  border-right:1px solid var(--gray-800);
+  cursor:default;
+}
+
+.code-tab.active{
+  color:var(--white);
+  background:rgba(250,250,249,.03);
+}
+
+pre{
+  padding:20px;
+  overflow-x:auto;
+  font-family:var(--mono);
+  font-size:13px;
+  line-height:1.75;
+  color:var(--gray-400);
+  -webkit-overflow-scrolling:touch;
+}
+
+pre .kw{color:#C084FC}
+pre .fn{color:#60A5FA}
+pre .str{color:#86EFAC}
+pre .cm{color:var(--gray-700);font-style:italic}
+pre .op{color:var(--gray-500)}
+pre .br{color:var(--gray-600)}
+
+/* ── Differentiators ── */
+.diff-section{
+  padding:56px 0;
+  border-top:1px solid var(--gray-800);
+}
+
+.diff-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--gray-800);
+  border:1px solid var(--gray-800);
+  border-radius:8px;
+  overflow:hidden;
+}
+
+.diff-item{
+  background:var(--gray-950);
+  padding:28px 24px;
+}
+
+.diff-item h3{
+  font-family:var(--sans);
+  font-size:14px;
+  font-weight:500;
+  color:var(--white);
+  margin-bottom:8px;
+}
+
+.diff-item p{
+  font-size:13px;
+  color:var(--gray-500);
+  line-height:1.55;
+}
+
+/* ── Compare ── */
+.compare-section{
+  padding:56px 0;
+  border-top:1px solid var(--gray-800);
+}
+
+.compare-section h2{
+  font-family:var(--sans);
+  font-size:14px;
+  font-weight:500;
+  color:var(--gray-500);
+  margin-bottom:20px;
+}
+
+.compare-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+.compare-table th{
+  text-align:left;
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:11px;
+  color:var(--gray-600);
+  padding:0 0 12px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.compare-table td{
+  padding:10px 0;
+  border-top:1px solid var(--gray-800);
+  color:var(--gray-500);
+  vertical-align:top;
+}
+
+.compare-table td:first-child{
+  color:var(--gray-400);
+  font-family:var(--mono);
+  font-size:12px;
+  width:35%;
+  padding-right:16px;
+}
+
+.compare-table td:nth-child(2){
+  color:var(--white);
+  font-weight:500;
+}
+
+/* ── Footer ── */
+footer{
+  padding:32px 0;
+  border-top:1px solid var(--gray-800);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--gray-700);
+}
+
+footer a{
+  color:var(--gray-500);
+  transition:color .15s ease;
+}
+
+footer a:hover{color:var(--white)}
+
+/* ── Responsive ── */
+@media(max-width:540px){
+  .hero{padding:56px 0 48px}
+  h1{font-size:30px}
+  .form-row{flex-direction:column}
+  .form-row button{width:100%}
+  .diff-grid{grid-template-columns:1fr}
+  .compare-table td:first-child{width:40%}
+  .code-section,.diff-section,.compare-section{padding:40px 0}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <span class="logo">keyed</span>
+    <span class="tag">pre-launch</span>
+  </header>
+
+  <section class="hero">
+    <h1>API key auth without the platform.</h1>
+    <p>You needed to issue keys, hash them, and let users revoke them. You got a gateway, a dashboard, and a monthly bill. This fixes that.</p>
+
+    <form id="wl" class="form-row" action="https://formspree.io/f/mqpkzwyn" method="POST">
+      <input type="email" name="email" placeholder="you@project.dev" required aria-label="Email" autocomplete="email">
+      <button type="submit">Join waitlist</button>
+    </form>
+    <p class="form-note" id="fn">One-time payment at launch. No subscription, no spam.</p>
+    <div class="success-msg" id="ok">You're on the list. I'll email when it ships.</div>
+  </section>
+
+  <section class="code-section">
+    <h2>That's the whole integration.</h2>
+    <div class="code-block">
+      <div class="code-tabs">
+        <span class="code-tab active">middleware.ts</span>
+      </div>
+<pre><span class="kw">import</span> <span class="br">{</span> <span class="fn">keyed</span> <span class="br">}</span> <span class="kw">from</span> <span class="str">"@keyed/node"</span>
+
+<span class="kw">const</span> auth <span class="op">=</span> <span class="fn">keyed</span><span class="br">(</span><span class="str">"sk_proj_..."</span><span class="br">)</span>
+
+<span class="cm">// verify incoming request</span>
+<span class="kw">const</span> result <span class="op">=</span> <span class="kw">await</span> auth<span class="op">.</span><span class="fn">verify</span><span class="br">(</span>req<span class="op">.</span>headers<span class="op">.</span>authorization<span class="br">)</span>
+
+<span class="kw">if</span> <span class="br">(</span><span class="op">!</span>result<span class="op">.</span>valid<span class="br">)</span> <span class="kw">return</span> <span class="fn">Response</span><span class="op">.</span><span class="fn">json</span><span class="br">(</span>
+  <span class="br">{</span> error<span class="op">:</span> result<span class="op">.</span>code <span class="br">}</span><span class="op">,</span>
+  <span class="br">{</span> status<span class="op">:</span> <span class="str">401</span> <span class="br">}</span>
+<span class="br">)</span></pre>
+    </div>
+  </section>
+
+  <section class="diff-section">
+    <div class="diff-grid">
+      <div class="diff-item">
+        <h3>Hashed at rest</h3>
+        <p>Keys are bcrypt-hashed before storage. The raw key is shown once, then gone.</p>
+      </div>
+      <div class="diff-item">
+        <h3>Scoped &amp; time-bound</h3>
+        <p>Set read/write permissions and a TTL. Keys expire on their own.</p>
+      </div>
+      <div class="diff-item">
+        <h3>Rate limiting built in</h3>
+        <p>Per-key rate limits. No separate service, no extra config.</p>
+      </div>
+      <div class="diff-item">
+        <h3>Revoke in one call</h3>
+        <p>Kill a compromised key instantly. No dashboard hunting.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="compare-section">
+    <h2>Why not just use the others?</h2>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>keyed</th>
+          <th>Platforms</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pricing</td>
+          <td>Pay once</td>
+          <td>$20-50/mo</td>
+        </tr>
+        <tr>
+          <td>Setup</td>
+          <td>npm install + 3 lines</td>
+          <td>Gateway, DNS, dashboard</td>
+        </tr>
+        <tr>
+          <td>Lock-in</td>
+          <td>None, keys are yours</td>
+          <td>Vendor-managed infra</td>
+        </tr>
+        <tr>
+          <td>Target</td>
+          <td>Solo devs, side projects</td>
+          <td>Engineering teams</td>
+        </tr>
+        <tr>
+          <td>AI agent keys</td>
+          <td>Scoped, short-lived, revocable</td>
+          <td>Enterprise NHI audit</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <span>&copy; 2025 keyed</span>
+    <a href="https://x.com/" target="_blank" rel="noopener">@keyed</a>
+  </footer>
+
+</div>
+
+<script>
+const f=document.getElementById('wl'),
+      btn=f.querySelector('button'),
+      n=document.getElementById('fn'),
+      ok=document.getElementById('ok');
+
+f.addEventListener('submit',e=>{
+  e.preventDefault();
+  btn.disabled=true;
+  btn.textContent='Sending...';
+
+  fetch(f.action,{
+    method:'POST',
+    body:new FormData(f),
+    headers:{'Accept':'application/json'}
+  })
+  .then(r=>{
+    if(!r.ok) throw new Error(r.status);
+    f.classList.add('hide');
+    n.classList.add('hide');
+    ok.classList.add('show');
+  })
+  .catch(()=>{
+    btn.disabled=false;
+    btn.textContent='Join waitlist';
+    n.textContent='Something went wrong. Try again.';
+    n.style.color='#EF4444';
+  });
+});
+</script>
+
+</body>
+</html>
