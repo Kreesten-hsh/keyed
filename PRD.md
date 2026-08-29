@@ -108,7 +108,10 @@ Suivre les étapes pertinentes du Playbook Mike Hill adaptées au solo/0 budget 
 
 ## 8. Questions ouvertes (à trancher avec le candidat)
 
-1. Seuil exact d'inscriptions/réactions avant de basculer vers le code du MVP (non fixé formellement).
+1. **Seuil exact d'inscriptions/réactions avant de basculer vers le code du MVP :**
+   * *Point de données empirique (29 août 2026, r/digital_ocean) :* 1k+ vues en 48h (#1 du sub, 50% audience US/UK/CA) mais ratio d'upvotes faible (40%, 0 net) et 3 commentaires. Ce pattern confirme que le titre capte l'attention, mais suscite de la friction/scepticisme sur la monétisation fermée d'un outil d'infra basique.
+   * *Signal produit clé :* Demande explicite non sollicitée d'un développeur (Mr-Shortman) pour une distribution open source / self-hosted. À intégrer dans la réflexion de packaging (lib open-core / source-available + dashboard payant).
+   * *Critère de décision :* Ne pas se baser uniquement sur le reach brut, mais exiger un minimum de conversions waitlist et d'adhésion qualitative avant d'ouvrir l'IDE pour le backend.
 2. Date J0 de lancement de la campagne de publication (validée au 28 août 2026).
 3. Méthode de logging des interactions communautaires (Google Sheet vs static data n8n vs volume Docker monté).
 4. Faut-il câbler un webhook Formspree → n8n (nécessite un tunnel Cloudflare stable) ou rester sur les notifications email Formspree pour l'instant.
