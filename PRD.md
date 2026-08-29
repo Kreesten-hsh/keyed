@@ -108,10 +108,14 @@ Suivre les étapes pertinentes du Playbook Mike Hill adaptées au solo/0 budget 
 
 ## 8. Questions ouvertes (à trancher avec le candidat)
 
-1. **Seuil exact d'inscriptions/réactions avant de basculer vers le code du MVP :**
+1. **Seuil exact d'inscriptions/réactions avant de basculer vers le code du MVP — TRANCHÉ le 29 août 2026, trajectoire de validation par l'usage :**
    * *Point de données empirique (29 août 2026, r/digital_ocean) :* 1k+ vues en 48h (#1 du sub, 50% audience US/UK/CA) mais ratio d'upvotes faible (40%, 0 net) et 3 commentaires. Ce pattern confirme que le titre capte l'attention, mais suscite de la friction/scepticisme sur la monétisation fermée d'un outil d'infra basique.
    * *Signal produit clé :* Demande explicite non sollicitée d'un développeur (Mr-Shortman) pour une distribution open source / self-hosted. À intégrer dans la réflexion de packaging (lib open-core / source-available + dashboard payant).
-   * *Critère de décision :* Ne pas se baser uniquement sur le reach brut, mais exiger un minimum de conversions waitlist et d'adhésion qualitative avant d'ouvrir l'IDE pour le backend.
+   * **Axe 1 — Pas de pré-vente Stripe tant que le signal qualitatif est faible.** Aucun prix affiché sur `index.html` pour l'instant. Le signal actuel (0 upvote net) ne justifie pas d'encaisser de l'argent réel sur un produit non livré — risque réputationnel jugé disproportionné face à un public dev qui ne pardonne pas le vaporware.
+   * **Axe 2 — Construction du cœur minimal réel (pas un faux Wizard-of-Oz).** FastAPI + PostgreSQL pour le hash/scope/revoke, SDK middleware minimal (Node ou Python selon la demande observée). Rien au-delà : pas de dashboard équipe, pas d'analytics avancées, pas d'app mobile d'admin. Délai indicatif large, pas de deadline serrée artificielle.
+   * **Axe 3 — Validation par rétention d'usage à 7 jours, pas par les inscriptions.** Objectif : 3 développeurs tiers qui installent le middleware gratuit dans un projet de staging/test réel. Engagement de support rapide de notre côté pendant cette fenêtre — un bug non résolu invalide la mesure, indépendamment de la qualité du produit. Validation acquise si le code est toujours actif chez au moins 3 d'entre eux après 7 jours.
+   * **Axe 4 — Le déclencheur Stripe devient une conséquence, pas une hypothèse.** LTD privée (prix à confirmer, ordre de grandeur 49$) proposée uniquement quand un bêta-testeur demande explicitement à passer en production. L'argent suit l'usage réel, pas l'inverse.
+   * *Conséquence sur le discours public :* dès que le code du cœur existe, les réponses publiques ("still validating demand before writing the code") doivent évoluer vers "building the core now, testing with a few devs" — ne pas laisser deux discours contradictoires coexister sur Reddit/X.
 2. Date J0 de lancement de la campagne de publication (validée au 28 août 2026).
 3. Méthode de logging des interactions communautaires (Google Sheet vs static data n8n vs volume Docker monté).
 4. Faut-il câbler un webhook Formspree → n8n (nécessite un tunnel Cloudflare stable) ou rester sur les notifications email Formspree pour l'instant.
