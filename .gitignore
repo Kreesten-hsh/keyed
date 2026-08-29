@@ -5,3 +5,4 @@ data/
 docker-compose.n8n.yml
 start_n8n.sh
 hf-n8n/
+.playwright-mcp/
