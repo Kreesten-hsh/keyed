@@ -32,6 +32,7 @@ Analyse du **Playbook SaaS de Mike Hill** (5 SaaS à 200K$ MRR cumulés) comme g
 Le rapport Deep Research se basait sur une photo datée du marché. Vérification web en direct :
 - **Unkey** (concurrent principal) a levé **4,5M$ en avril 2026** (YC, Uncork Capital, Cloudflare/fondateurs Supabase/GitHub comme investisseurs/advisors) et devient une plateforme complète de déploiement d'API (gateway, observabilité), pas juste un gestionnaire de clés.
 - Le marché de la **gouvernance NHI/agents IA** est en forte croissance mais déjà saturé de gros acteurs financés (Astrix racheté par Cisco, Oasis, Entro, Okta Entra Agent ID, One Identity) — non viable comme cœur de produit à budget zéro.
+- **Distinction de catégorie essentielle (Client vs Serveur) :** Des outils comme *Isla* (app desktop Mac) ou *API Vault* (extension VS Code) sont des coffres-forts locaux pour clés *sortantes* (stocker ses clés tierces OpenAI/Stripe personnelles). Ce ne sont **pas** des concurrents de `keyed`. `keyed` opère exclusivement sur l'**authentification entrante, le rate limiting et la révocation côté serveur** (middleware Node/Python).
 
 ### 2.5 Conclusion stratégique (le positionnement actuel)
 Ne pas copier Unkey frontalement. Viser le vide qu'ils laissent en montant en gamme :
