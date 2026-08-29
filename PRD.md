@@ -1,5 +1,5 @@
 # PRD — keyed
-*Dernière mise à jour : 27 août 2026*
+*Dernière mise à jour : 29 août 2026*
 
 ---
 
@@ -83,14 +83,16 @@ Suivre les étapes pertinentes du Playbook Mike Hill adaptées au solo/0 budget 
 
 ---
 
-## 6. Où en est le projet aujourd'hui (état factuel au 27 août 2026)
+## 6. Où en est le projet aujourd'hui (état factuel au 29 août 2026)
 
-- **Page d'attente en ligne** : https://kreesten-hsh.github.io/keyed/ — déployée sur GitHub Pages, formulaire Formspree connecté (`mqpkzwyn`).
-- **Bug connu identifié et corrigé** dans une version locale du fichier (gestion `fetch`/`preventDefault` correcte + footer 2026) — **à vérifier que cette version corrigée est bien celle actuellement en ligne**, un écart avait été repéré entre le fichier local et le déploiement live (footer 2025 encore visible sur une vérification précédente).
+- **Page d'attente en ligne** : https://kreesten-hsh.github.io/keyed/ — déployée sur GitHub Pages, formulaire Formspree connecté (`mqaejvqd`).
+- **Bug connu identifié et corrigé** dans une version locale du fichier (gestion `fetch`/`preventDefault` correcte + footer 2026) — déployé et synchronisé en production.
 - **4 textes de pitch finalisés** (angles A/B/C/D) + thread X + post Threads — version finale et révisée dans `DISTRIBUTION_POSTS.md`, avec correctif anti-spam appliqué (aucun lien dans le post initial ni en premier commentaire automatique).
 - **Calendrier de publication défini** : J0 = r/SideProject + Threads, J+1 = thread X, J+3/4 = r/webdev, J+7/8 = r/LocalLLaMA.
 - **n8n actif en local** (Docker) avec un workflow Telegram → Claude Opus (via GoRouter) → Telegram, utilisé pour générer des brouillons de réponse aux commentaires. 4 briques supplémentaires en cours de spec/construction : scheduler de rappels, veille RSS Reddit, logging des interactions, webhook Formspree.
-- **Alerte sécurité active** : une clé API n8n a été exposée en clair dans les échanges à deux reprises — la régénération de cette clé doit être confirmée avant de considérer l'infrastructure comme saine (voir `AGENT.md`).
+- **Alerte sécurité réglée** : Régénération de la clé API n8n confirmée par le fondateur le 29 août 2026.
+- **Analytics** : PostHog Cloud US intégré sur `index.html`, `waitlist.html` et les pages `/blog/`, validé explicitement par le fondateur le 29 août 2026.
+- **Blog SEO** : 4 pages statiques publiées dans `/blog/` sur un calendrier étalé (30 août, 2, 5 et 8 septembre 2026), voir `SEO_PAGES_BRIEF.md` et `COMMUNITY_CALENDAR.md`.
 
 ---
 
@@ -107,7 +109,6 @@ Suivre les étapes pertinentes du Playbook Mike Hill adaptées au solo/0 budget 
 ## 8. Questions ouvertes (à trancher avec le candidat)
 
 1. Seuil exact d'inscriptions/réactions avant de basculer vers le code du MVP (non fixé formellement).
-2. Date J0 de lancement de la campagne de publication (à confirmer).
+2. Date J0 de lancement de la campagne de publication (validée au 28 août 2026).
 3. Méthode de logging des interactions communautaires (Google Sheet vs static data n8n vs volume Docker monté).
 4. Faut-il câbler un webhook Formspree → n8n (nécessite un tunnel Cloudflare stable) ou rester sur les notifications email Formspree pour l'instant.
-5. Confirmation que la clé API n8n exposée a bien été régénérée.
