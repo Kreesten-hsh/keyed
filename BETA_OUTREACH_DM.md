@@ -4,9 +4,13 @@
 
 ---
 
-## Cible
+## Grille de Qualification Stricte (3 Filtres Éliminatoires)
 
-Développeurs qui se plaignent publiquement (issue GitHub, thread Reddit, post X) d'un problème précis et concret lié à la gestion de clés API : fuite de `.env`, absence de rate limiting, clé qui ne peut pas être révoquée sans redéploiement, timing attack sur une comparaison de clé maison, etc. Pas de recherche par mot-clé générique ("API key management") — la personne doit avoir décrit un incident ou une friction réelle, sinon le DM sonne creux.
+Avant d'envisager d'écrire à un développeur, l'issue ou le thread doit valider **les 3 conditions cumulatives** :
+
+1. **Émetteur de clés vers des tiers (Multi-tenant) :** Le projet doit être une API, un SaaS ou un service qui émet des clés d'accès à des utilisateurs, clients ou agents externes. Exclure d'office les projets mono-utilisateurs (ex: un chatbot personnel ou un wrapper local) et les coffres-forts de clés sortantes (.env).
+2. **Auteur humain & friction vivante :** L'auteur doit être un être humain (jamais un `bot` ou une sous-tâche générée par un pipeline CI) exprimant une réelle incertitude ou douleur sur l'implémentation (rotation, persistance du hash, rate limiting).
+3. **Compatibilité technique :** Ne jamais contacter un développeur dont la contrainte affichée est "zéro dépendance" ou qui a déjà figé son implémentation en dur.
 
 ## Règle absolue
 
