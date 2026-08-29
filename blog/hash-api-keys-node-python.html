@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>How to Hash and Verify API Keys in Node.js and Python — keyed</title>
+<meta name="description" content="A practical guide to generating, hashing, indexing, and verifying API keys safely in Node.js and Python without timing attacks."/>
+<meta property="og:title" content="How to Hash and Verify API Keys in Node.js and Python"/>
+<meta property="og:description" content="Learn how to store and verify API keys securely using salted hashing, prefix indexing, and constant-time comparison in Node.js and Python."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "background": "#131313",
+                    "surface": "#131313",
+                    "surface-container": "#201f1f",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container-high": "#2a2a2a",
+                    "primary": "#ffffff",
+                    "secondary": "#adc6ff",
+                    "tertiary": "#6ffbbe",
+                    "on-surface": "#e5e2e1",
+                    "on-surface-variant": "#c4c7c8",
+                    "outline-variant": "#444748"
+                },
+                fontFamily: {
+                    "sans": ["Geist", "sans-serif"],
+                    "mono": ["JetBrains Mono", "monospace"]
+                }
+            }
+        }
+    }
+</script>
+<!-- PostHog Analytics -->
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p=t.createElement("script"),p.type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_rVonC74YoeDqWpk8wFVJ7NQcUG2EZkTwYYq8EFqCrohy', {
+        api_host: 'https://us.i.posthog.com',
+        person_profiles: 'identified_only'
+    });
+</script>
+<style>
+    body { background-color: #131313; color: #e5e2e1; font-family: 'Geist', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#4edea3] selection:text-black relative">
+
+<!-- Navigation -->
+<nav class="fixed top-0 w-full z-40 flex justify-between items-center px-6 py-4 max-w-[1280px] mx-auto bg-background/80 backdrop-blur-md border-b border-outline-variant/30 left-1/2 -translate-x-1/2">
+    <a class="text-3xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity" href="../index.html">
+        keyed
+    </a>
+    <div class="flex items-center gap-4">
+        <a href="../index.html" class="text-sm font-medium text-on-surface-variant hover:text-white transition-colors">Home</a>
+        <a href="../index.html" class="px-3.5 py-1.5 rounded-lg bg-primary text-black font-semibold text-xs hover:bg-white/90 transition-all">Get Early Access</a>
+    </div>
+</nav>
+
+<!-- Article Container -->
+<main class="flex-grow max-w-[800px] w-full mx-auto pt-32 pb-24 px-6">
+    <div class="mb-8">
+        <a href="../index.html" class="inline-flex items-center gap-1 text-sm text-on-surface-variant hover:text-white transition-colors mb-4">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to keyed
+        </a>
+        <div class="text-xs uppercase tracking-widest text-secondary font-mono mb-2">Technical Guide</div>
+        <h1 class="text-3xl sm:text-4xl md:text-[42px] font-extrabold text-primary tracking-tight leading-tight mb-4">
+            How to hash and verify API keys in Node.js and Python
+        </h1>
+        <p class="text-sm text-on-surface-variant font-mono">Published August 30, 2026 &bull; 6 min read</p>
+    </div>
+
+    <article class="space-y-6 text-on-surface leading-relaxed text-base sm:text-lg">
+        <p>
+            Storing raw API keys in your database is a serious security flaw. If your database ever leaks through an SQL injection, an unencrypted backup, or an exposed snapshot, every user token is immediately compromised.
+        </p>
+        <p>
+            Just like user passwords, API keys must be hashed before storage. However, API keys have different performance and lookup requirements than user passwords. This guide explains how to generate, hash, index, and verify API keys securely in both Node.js and Python.
+        </p>
+
+        <h2 class="text-2xl font-bold text-white pt-6 pb-2 border-b border-outline-variant/30">
+            The core security requirements of an API key system
+        </h2>
+        <p>A secure API key architecture requires four main mechanisms:</p>
+        <ol class="list-decimal pl-6 space-y-2">
+            <li><strong>Cryptographic randomness:</strong> Keys must be generated using an entropy source provided by the operating system, never with standard pseudorandom generators like Math.random or Python's random module.</li>
+            <li><strong>Structured prefixes:</strong> Splitting a key into a public prefix (such as <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">sk_live_</code>) and a secret suffix allows fast database lookups without scanning the entire table.</li>
+            <li><strong>Cryptographic hashing:</strong> Storing only the cryptographic hash of the secret portion in your database.</li>
+            <li><strong>Constant-time comparison:</strong> Comparing hashes using constant-time string equality functions to prevent side-channel timing attacks.</li>
+        </ol>
+
+        <h2 class="text-2xl font-bold text-white pt-6 pb-2 border-b border-outline-variant/30">
+            Implementing API key hashing in Node.js
+        </h2>
+        <p>
+            In Node.js, you can use the built-in <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">crypto</code> module to generate keys and compute fast, salted SHA-256 hashes.
+        </p>
+
+        <div class="relative group my-4 rounded-lg bg-[#0e0e0e] border border-outline-variant/40 overflow-hidden">
+            <div class="flex justify-between items-center px-4 py-2 bg-[#1c1b1b] border-b border-outline-variant/40 text-xs font-mono text-on-surface-variant">
+                <span>api-keys.mjs</span>
+                <button onclick="navigator.clipboard.writeText(this.closest('.group').querySelector('pre').innerText); this.textContent='copied!'; setTimeout(()=>this.textContent='copy',2000);" class="text-xs hover:text-white px-2 py-0.5 rounded bg-surface-container">copy</button>
+            </div>
+            <pre class="p-4 font-mono text-sm overflow-x-auto text-[#e5e2e1]"><code>import crypto from 'node:crypto';
+
+// 1. Generate a new API key and its database record
+export function generateApiKey(environment = 'live') {
+  const prefix = `sk_${environment}_`;
+  const secretBytes = crypto.randomBytes(24).toString('base64url');
+  const fullKey = `${prefix}${secretBytes}`;
+
+  // Hash the secret portion using salted SHA-256
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto
+    .createHash('sha256')
+    .update(`${salt}:${secretBytes}`)
+    .digest('hex');
+
+  return {
+    fullKey, // Return this ONCE to the user upon creation
+    dbRecord: {
+      prefix,
+      salt,
+      hash,
+      createdAt: new Date().toISOString(),
+      revoked: false
+    }
+  };
+}
+
+// 2. Verify an incoming API key against a stored database record
+export function verifyApiKey(incomingKey, dbRecord) {
+  if (!incomingKey || !dbRecord || dbRecord.revoked) {
+    return false;
+  }
+
+  // Derive prefix length dynamically from the stored prefix
+  const prefixLength = dbRecord.prefix.length;
+  if (incomingKey.length <= prefixLength) {
+    return false;
+  }
+
+  const incomingPrefix = incomingKey.slice(0, prefixLength);
+  const incomingSecret = incomingKey.slice(prefixLength);
+
+  if (incomingPrefix !== dbRecord.prefix) {
+    return false;
+  }
+
+  const computedHash = crypto
+    .createHash('sha256')
+    .update(`${dbRecord.salt}:${incomingSecret}`)
+    .digest('hex');
+
+  const computedBuffer = Buffer.from(computedHash, 'hex');
+  const storedBuffer = Buffer.from(dbRecord.hash, 'hex');
+
+  if (computedBuffer.length !== storedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(computedBuffer, storedBuffer);
+}</code></pre>
+        </div>
+
+        <h2 class="text-2xl font-bold text-white pt-6 pb-2 border-b border-outline-variant/30">
+            Implementing API key hashing in Python with FastAPI
+        </h2>
+        <p>
+            In Python, the standard library provides <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">secrets</code> for generation and <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">hashlib</code> for hashing.
+        </p>
+
+        <div class="relative group my-4 rounded-lg bg-[#0e0e0e] border border-outline-variant/40 overflow-hidden">
+            <div class="flex justify-between items-center px-4 py-2 bg-[#1c1b1b] border-b border-outline-variant/40 text-xs font-mono text-on-surface-variant">
+                <span>security.py</span>
+                <button onclick="navigator.clipboard.writeText(this.closest('.group').querySelector('pre').innerText); this.textContent='copied!'; setTimeout(()=>this.textContent='copy',2000);" class="text-xs hover:text-white px-2 py-0.5 rounded bg-surface-container">copy</button>
+            </div>
+            <pre class="p-4 font-mono text-sm overflow-x-auto text-[#e5e2e1]"><code>import secrets
+import hashlib
+from typing import Optional, Dict
+
+def generate_api_key(environment: str = "live") -> Dict[str, str]:
+    prefix = f"sk_{environment}_"
+    secret_bytes = secrets.token_urlsafe(24)
+    full_key = f"{prefix}{secret_bytes}"
+    
+    salt = secrets.token_hex(16)
+    hash_payload = f"{salt}:{secret_bytes}".encode("utf-8")
+    key_hash = hashlib.sha256(hash_payload).hexdigest()
+    
+    return {
+        "full_key": full_key,
+        "prefix": prefix,
+        "salt": salt,
+        "hash": key_hash
+    }
+
+def verify_api_key(incoming_key: str, stored_prefix: str, stored_salt: str, stored_hash: str) -> bool:
+    if not incoming_key or len(incoming_key) <= len(stored_prefix):
+        return False
+        
+    prefix_len = len(stored_prefix)
+    prefix = incoming_key[:prefix_len]
+    if not secrets.compare_digest(prefix, stored_prefix):
+        return False
+        
+    incoming_secret = incoming_key[prefix_len:]
+    hash_payload = f"{stored_salt}:{incoming_secret}".encode("utf-8")
+    computed_hash = hashlib.sha256(hash_payload).hexdigest()
+    
+    return secrets.compare_digest(computed_hash, stored_hash)</code></pre>
+        </div>
+
+        <h2 class="text-2xl font-bold text-white pt-6 pb-2 border-b border-outline-variant/30">
+            Preventing timing attacks and indexing performance
+        </h2>
+        <p>
+            When verifying API keys on high-throughput endpoints, you need to balance security with latency.
+        </p>
+        <p>
+            Standard string comparisons (<code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">===</code> in JavaScript or <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">==</code> in Python) return <code class="font-mono text-sm">false</code> on the first mismatched character. Attackers can measure response times down to microseconds to guess the correct hash byte by byte. Always use <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">crypto.timingSafeEqual</code> or <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">secrets.compare_digest</code> to ensure verification takes identical time regardless of where a mismatch occurs.
+        </p>
+        <p>
+            For database performance, never query directly by full key hash if you use slow key derivation functions. Indexing by the public prefix allows your database to locate the candidate row via B-Tree index in under 1 millisecond, after which your application code verifies the cryptographic hash in memory.
+        </p>
+
+        <!-- CTA Box -->
+        <div class="mt-12 p-8 rounded-xl bg-gradient-to-r from-surface-container-low via-[#141414] to-surface-container-low border border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="text-left">
+                <h3 class="text-xl text-primary font-bold mb-1">Want key auth without writing boilerplate?</h3>
+                <p class="text-sm text-on-surface-variant">keyed is a lightweight local SDK for Node.js and Python that handles local hashing in &lt;3ms, rate limiting, and instant revocation for a single one-time payment.</p>
+            </div>
+            <a href="../index.html" class="bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-white/90 transition-all whitespace-nowrap active:scale-95 shadow-md">
+                Learn About keyed
+            </a>
+        </div>
+    </article>
+</main>
+
+<!-- Footer -->
+<footer class="w-full px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-4 max-w-[1280px] mx-auto border-t border-outline-variant/20 bg-background text-sm text-on-surface-variant">
+    <div class="font-bold text-xl text-white">keyed</div>
+    <p>&copy; 2026 keyed &bull; API keys done right, once.</p>
+</footer>
+
+</body>
+</html>

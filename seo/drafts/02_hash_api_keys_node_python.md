@@ -53,10 +53,14 @@ export function verifyApiKey(incomingKey, dbRecord) {
     return false;
   }
 
-  const [incomingPrefix, incomingSecret] = [
-    incomingKey.slice(0, 8),
-    incomingKey.slice(8)
-  ];
+  // Derive prefix length dynamically from the stored prefix
+  const prefixLength = dbRecord.prefix.length;
+  if (incomingKey.length <= prefixLength) {
+    return false;
+  }
+
+  const incomingPrefix = incomingKey.slice(0, prefixLength);
+  const incomingSecret = incomingKey.slice(prefixLength);
 
   if (incomingPrefix !== dbRecord.prefix) {
     return false;
@@ -106,14 +110,15 @@ def generate_api_key(environment: str = "live") -> Dict[str, str]:
     }
 
 def verify_api_key(incoming_key: str, stored_prefix: str, stored_salt: str, stored_hash: str) -> bool:
-    if not incoming_key or len(incoming_key) < 16:
+    if not incoming_key or len(incoming_key) <= len(stored_prefix):
         return False
         
-    prefix = incoming_key[:8]
+    prefix_len = len(stored_prefix)
+    prefix = incoming_key[:prefix_len]
     if not secrets.compare_digest(prefix, stored_prefix):
         return False
         
-    incoming_secret = incoming_key[8:]
+    incoming_secret = incoming_key[prefix_len:]
     hash_payload = f"{stored_salt}:{incoming_secret}".encode("utf-8")
     computed_hash = hashlib.sha256(hash_payload).hexdigest()
     

@@ -28,7 +28,7 @@ When a client passes an API key, keyed hashes the key and checks it against your
 
 The financial model of infrastructure tools directly impacts project profitability, especially for early-stage and solo developers.
 
-Unkey operates on a standard SaaS pricing model. It charges monthly subscription fees based on active keys, team seats, and verification volume. While generous free tiers exist, production usage on multiple side projects accumulates recurring monthly costs. A venture-backed business requires recurring revenue to sustain its valuation and infrastructure overhead.
+Unkey operates on a standard SaaS subscription model. It charges monthly fees based on active keys, team seats, and verification volume. Production usage across multiple side projects accumulates recurring monthly costs. A venture-backed business requires recurring revenue to sustain its valuation and infrastructure overhead.
 
 keyed uses a lifetime deal model. You pay once for the software and own it forever. There are no monthly invoices, no per-verification fees, and no overage penalties. For developers managing multiple side projects that generate modest revenue, eliminating recurring infrastructure bills keeps fixed costs near zero.
 
