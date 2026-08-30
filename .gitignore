@@ -6,3 +6,12 @@ docker-compose.n8n.yml
 start_n8n.sh
 hf-n8n/
 .playwright-mcp/
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
