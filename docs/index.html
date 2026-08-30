@@ -447,7 +447,7 @@
 
 
 <h1 id="quickstart">Quickstart</h1>
-<p><code>keyed</code> is a lightweight local FastAPI authentication library for issuing, verifying, and rate-limiting API keys. All validation happens in-process and against your own PostgreSQL database in sub-5ms with zero external cloud proxies.</p>
+<p><code>keyed</code> is a lightweight local FastAPI authentication library for issuing, verifying, and rate-limiting API keys. All validation happens in-process and against your own PostgreSQL database with zero external cloud proxies.</p>
 <hr />
 <h2 id="5-minute-example">5-Minute Example</h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -488,7 +488,7 @@
 <h2 id="what-happens-on-each-request">What Happens on Each Request</h2>
 <ol>
 <li><strong>Header Extraction:</strong> <code>keyed</code> reads the incoming <code>X-API-Key</code> header.</li>
-<li><strong>In-Memory Rate Limiting:</strong> Checks sliding-window counters in memory (&lt;1ms). Returns <code>429 Too Many Requests</code> with a <code>Retry-After</code> header if exceeded.</li>
+<li><strong>In-Memory Rate Limiting:</strong> Checks sliding-window counters in process memory. Returns <code>429 Too Many Requests</code> with a <code>Retry-After</code> header if exceeded.</li>
 <li><strong>Constant-Time Verification:</strong> Looks up the key by its dynamic prefix, retrieves the salted SHA-256 hash from PostgreSQL, and compares using <code>hmac.compare_digest</code>.</li>
 <li><strong>Scope &amp; Revocation Check:</strong> Ensures the key is not expired, not revoked, and holds the required scopes before executing your route logic.</li>
 </ol>
