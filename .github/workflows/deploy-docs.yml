@@ -1,0 +1,51 @@
+name: Deploy GitHub Pages and Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'index.html'
+      - 'blog/**'
+      - '.github/workflows/deploy-docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install documentation dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Build MkDocs documentation
+        run: |
+          mkdocs build --strict -d site-docs
+
+      - name: Assemble unified GitHub Pages directory
+        run: |
+          mkdir -p public/docs
+          cp index.html public/
+          cp -r blog public/
+          cp -r site-docs/* public/docs/
+
+      - name: Deploy to GitHub Pages (gh-pages branch)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          keep_files: false
