@@ -1,20 +1,33 @@
-*.pdf
-.DS_Store
-*.db
-data/
-docker-compose.n8n.yml
-start_n8n.sh
-hf-n8n/
-.playwright-mcp/
-.env
+# Python virtual environments & bytecode
 .venv/
 __pycache__/
 *.py[cod]
+*.egg-info/
+
+# Tests & linters caches
 .pytest_cache/
 .coverage
 htmlcov/
 .ruff_cache/
 .mypy_cache/
-site/
-*.egg-info/
 
+# MkDocs build artifacts
+site/
+
+# Local configuration & environment variables
+.env
+*.db
+
+# Internal strategy, research & private documentation
+strategy/
+internal/
+data/
+scratch/
+*.pdf
+docker-compose.n8n.yml
+start_n8n.sh
+hf-n8n/
+
+# OS and IDE caches
+.DS_Store
+.playwright-mcp/
