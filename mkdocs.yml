@@ -2,9 +2,6 @@ site_name: keyed
 site_description: Local API key authentication and rate limiting for FastAPI
 site_author: keyed
 
-exclude_docs: |
-  plans/*
-
 theme:
   name: material
   palette:
