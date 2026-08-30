@@ -3,50 +3,46 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>keyed — API keys, done right, once.</title>
-<meta name="description" content="Hash, scope, rate-limit, and revoke API keys in 3 lines of code. Pay once, own it forever. Zero subscriptions, zero gateway bloat."/>
-<meta property="og:title" content="keyed — API keys, done right, once."/>
-<meta property="og:description" content="Stop paying $30/mo just to issue API keys. 3 lines of code, hashed locally, rate-limited, revocable. One-time payment at launch."/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>keyed — Local FastAPI API Key Authentication & Rate Limiting</title>
+<meta name="description" content="Local FastAPI authentication and sliding-window rate limiting for generated API keys. Salted SHA-256, PostgreSQL storage, zero external gateway proxies."/>
+<link rel="canonical" href="https://kreesten-hsh.github.io/keyed/"/>
+
+<!-- Open Graph / Social -->
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://kreesten-hsh.github.io/keyed/"/>
+<meta property="og:title" content="keyed — Local FastAPI API Key Authentication"/>
+<meta property="og:description" content="Local FastAPI authentication and sliding-window rate limiting for generated API keys. Zero external gateway proxies."/>
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="keyed — Local FastAPI API Key Authentication"/>
+<meta name="twitter:description" content="Local FastAPI authentication and sliding-window rate limiting for generated API keys. Zero external gateway proxies."/>
+
+<!-- Google Fonts: Geist, JetBrains Mono, Material Symbols -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
+
+<!-- Tailwind CSS CDN with DESIGN.md Theme Tokens -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
     tailwind.config = {
-        darkMode: "class",
+        darkMode: 'class',
         theme: {
             extend: {
                 colors: {
-                    "inverse-surface": "#e5e2e1",
-                    "background": "#131313",
-                    "surface-dim": "#131313",
-                    "secondary": "#adc6ff",
-                    "tertiary": "#ffffff",
-                    "on-error-container": "#ffdad6",
-                    "tertiary-container": "#6ffbbe",
-                    "on-secondary-fixed-variant": "#004395",
-                    "secondary-fixed-dim": "#adc6ff",
-                    "tertiary-fixed-dim": "#4edea3",
-                    "inverse-primary": "#5d5f5f",
-                    "on-secondary": "#002e6a",
                     "surface-container-lowest": "#0e0e0e",
                     "tertiary-fixed": "#6ffbbe",
-                    "surface-container-high": "#2a2a2a",
-                    "surface-container-highest": "#353534",
-                    "primary-fixed-dim": "#c6c6c7",
-                    "on-background": "#e5e2e1",
-                    "primary": "#ffffff",
-                    "inverse-on-surface": "#313030",
-                    "outline-variant": "#444748",
-                    "outline": "#8e9192",
-                    "error": "#ffb4ab",
-                    "on-primary-fixed-variant": "#454747",
-                    "on-primary": "#2f3131",
-                    "on-error": "#690005",
+                    "surface-container-high": "#2b2a2a",
+                    "outline": "#909092",
                     "surface": "#131313",
-                    "secondary-container": "#0566d9",
-                    "on-tertiary": "#003824",
-                    "on-surface-variant": "#c4c7c8",
+                    "tertiary": "#4edea3",
+                    "surface-container-highest": "#353534",
+                    "outline-variant": "#454748",
+                    "primary": "#ffffff",
+                    "background": "#131313",
+                    "on-surface-variant": "#c6c6c7",
+                    "tertiary-fixed-dim": "#4edea3",
                     "on-tertiary-container": "#00734e",
                     "primary-container": "#e2e2e2",
                     "on-tertiary-fixed": "#002113",
@@ -119,13 +115,13 @@
         position: absolute;
         top: 25%;
         left: 50%;
-        width: 850px;
-        height: 650px;
-        transform: translate(-50%, -50%);
-        background: radial-gradient(circle at center, rgba(111, 251, 190, 0.09) 0%, rgba(59, 130, 246, 0.04) 40%, rgba(19, 19, 19, 0) 70%);
-        z-index: 0;
-        animation: heroBreathe 10s ease-in-out infinite;
+        width: 700px;
+        height: 480px;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.08) 45%, rgba(19, 19, 19, 0) 70%);
+        filter: blur(60px);
+        animation: heroBreathe 7s ease-in-out infinite;
         pointer-events: none;
+        z-index: 0;
     }
 
     .material-symbols-outlined {
@@ -184,7 +180,7 @@
     <div class="flex items-center gap-4">
         <a href="./docs/" class="font-body-md text-sm text-on-surface-variant hover:text-primary transition-colors">Docs</a>
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high border border-outline-variant/30 font-label-sm text-xs text-on-surface-variant badge-shimmer">
-            <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span> pre-launch &bull; founding LTD
+            <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span> pre-launch &bull; early access
         </div>
     </div>
 </nav>
@@ -197,13 +193,13 @@
     <!-- Hero Section -->
     <div class="max-w-[840px] text-center mb-stack-gap-lg flex flex-col items-center z-10">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high/90 border border-outline-variant/30 mb-6 font-label-sm text-label-sm text-on-surface-variant backdrop-blur-sm shadow-sm hover:border-outline-variant/60 transition-colors">
-            <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> Pay once. Own forever. Zero monthly subscription.
+            <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> In-process FastAPI authentication. Zero external proxy overhead.
         </div>
         <h1 class="font-display-lg text-display-lg text-primary mb-6 drop-shadow-sm text-4xl sm:text-5xl md:text-[52px] tracking-tight">
             API keys, done <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-[#adc6ff]">right</span>, once.
         </h1>
         <p class="font-body-lg text-body-lg text-on-surface-variant max-w-[620px] mx-auto mb-10 leading-relaxed text-base sm:text-lg">
-            Stop adding another $30/mo line item to your stack just to issue keys. Hash, verify, rate-limit, and revoke in 3 lines of code — with zero gateway bloat.
+            Hash, verify, rate-limit, and revoke generated API keys directly inside FastAPI with zero external gateway dependencies.
         </p>
 
         <!-- Waitlist Form Section -->
@@ -225,18 +221,17 @@
         </div>
     </div>
 
-    <!-- 3 Lines of Code Section -->
+    <!-- Code Snippet Section -->
     <div class="w-full max-w-[820px] mt-12 z-10 reveal-on-scroll">
         <div class="bg-[#000000] border border-[#1F1F1F] rounded-xl overflow-hidden shadow-2xl relative group hover:border-[#333] transition-colors">
-            <!-- Window Controls & Tabs -->
+            <!-- Window Controls & Header -->
             <div class="flex items-center justify-between px-4 py-3 border-b border-[#1F1F1F] bg-[#0A0A0A]">
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full bg-[#333]"></div>
                     <div class="w-3 h-3 rounded-full bg-[#333]"></div>
                     <div class="w-3 h-3 rounded-full bg-[#333]"></div>
                     <div class="flex items-center ml-4 gap-1">
-                        <button id="tab-ts" class="px-2.5 py-1 rounded font-label-sm text-xs text-white bg-[#1F1F1F] transition-all">middleware.ts</button>
-                        <button id="tab-py" class="px-2.5 py-1 rounded font-label-sm text-xs text-[#777] hover:text-white transition-all">auth.py</button>
+                        <span class="px-2.5 py-1 rounded font-label-sm text-xs text-white bg-[#1F1F1F]">main.py</span>
                     </div>
                 </div>
                 <button id="copy-btn" class="text-[#666] hover:text-primary transition-all p-1.5 rounded-md hover:bg-[#1A1A1A] flex items-center gap-1 font-label-sm text-xs active:scale-95" title="Copy code">
@@ -245,64 +240,59 @@
                 </button>
             </div>
 
-            <!-- Code TS snippet -->
-            <div id="code-ts-container" class="code-pane p-6 overflow-x-auto relative">
-                <pre class="font-code-md text-code-md leading-loose"><code class="text-[#e5e2e1]"><span class="text-[#c678dd]">import</span> { keyed } <span class="text-[#c678dd]">from</span> <span class="text-[#98c379]'@keyed/sdk'</span>;
-
-<span class="text-[#c678dd]">const</span> auth = <span class="text-[#e5c07b]">new</span> <span class="text-[#61afef]">keyed</span>(process.env.<span class="text-[#e06c75]">KEYED_SECRET</span>);
-
-<span class="text-[#5c6370]">/* That's your whole auth layer: hash check, rate limit, scope validation */</span>
-<span class="text-[#c678dd]">const</span> { valid, scope, remaining } = <span class="text-[#c678dd]">await</span> auth.<span class="text-[#61afef]">verify</span>(req.headers[<span class="text-[#98c379]'x-api-key'</span>]);
-<span class="text-[#c678dd]">if</span> (!valid) <span class="text-[#c678dd]">return</span> <span class="text-[#e5c07b]">new</span> <span class="text-[#61afef]">Response</span>(<span class="text-[#98c379]'Unauthorized'</span>, { status: <span class="text-[#d19a66]">401</span> });</code></pre>
-            </div>
-
             <!-- Code Python snippet -->
-            <div id="code-py-container" class="code-pane p-6 overflow-x-auto relative hidden">
-                <pre class="font-code-md text-code-md leading-loose"><code class="text-[#e5e2e1]"><span class="text-[#c678dd]">from</span> keyed <span class="text-[#c678dd]">import</span> KeyedAuth
+            <div id="code-py-container" class="code-pane p-6 overflow-x-auto relative">
+                <pre class="font-code-md text-code-md leading-loose"><code class="text-[#e5e2e1]"><span class="text-[#c678dd]">import</span> os
+<span class="text-[#c678dd]">from</span> fastapi <span class="text-[#c678dd]">import</span> Depends, FastAPI
+<span class="text-[#c678dd]">from</span> keyed <span class="text-[#c678dd]">import</span> Keyed
+<span class="text-[#c678dd]">from</span> keyed.core.models <span class="text-[#c678dd]">import</span> AuthenticatedAPIKey
 
-auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span class="text-[#98c379]'KEYED_SECRET'</span>))
+app = <span class="text-[#61afef]">FastAPI</span>()
+keyed = <span class="text-[#61afef]">Keyed</span>(os.environ[<span class="text-[#98c379]"KEYED_DATABASE_URL"</span>])
 
-<span class="text-[#5c6370]"># FastAPI / Flask dependency — verified in <3ms</span>
-<span class="text-[#e5c07b]">@app</span>.<span class="text-[#61afef]">get</span>(<span class="text-[#98c379]"/api/data"</span>)
-<span class="text-[#c678dd]">async def</span> <span class="text-[#61afef]">get_data</span>(api_key: str = Security(api_key_header)):
-    result = <span class="text-[#c678dd]">await</span> auth.<span class="text-[#61afef]">verify_async</span>(api_key)
-    <span class="text-[#c678dd]">if not</span> result.is_valid:
-        <span class="text-[#c678dd]">raise</span> <span class="text-[#61afef]">HTTPException</span>(status_code=<span class="text-[#d19a66]">401</span>, detail=<span class="text-[#98c379]"Invalid key"</span>)</code></pre>
+<span class="text-[#5c6370]"># FastAPI dependency — verified in-process against PostgreSQL</span>
+<span class="text-[#e5c07b]">@app</span>.<span class="text-[#61afef]">get</span>(<span class="text-[#98c379]"/api/documents"</span>)
+<span class="text-[#c678dd]">async def</span> <span class="text-[#61afef]">get_documents</span>(
+    principal: AuthenticatedAPIKey = <span class="text-[#61afef]">Depends</span>(
+        keyed.auth.<span class="text-[#61afef]">require_scopes</span>(<span class="text-[#98c379]"documents:read"</span>)
+    ),
+) -&gt; dict[str, str]:
+    <span class="text-[#c678dd]">return</span> {<span class="text-[#98c379]"tenant_id"</span>: <span class="text-[#61afef]">str</span>(principal.tenant_id)}</code></pre>
             </div>
         </div>
     </div>
 
     <!-- Features Bento Grid -->
     <div class="w-full max-w-[1000px] mt-28 z-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Feature 1: Pay Once -->
+        <!-- Feature 1: Zero External SaaS -->
         <div class="reveal-on-scroll bg-surface-container-low border-[2px] border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between h-full relative overflow-hidden group hover:border-[#3B82F6]/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] transition-all duration-300">
             <div class="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/10 to-[#10B981]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             <div>
                 <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-tertiary-fixed-dim">credit_card_off</span>
                 </div>
-                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">Pay Once, Own Forever</h3>
-                <p class="font-body-md text-body-md text-on-surface-variant">No $25-50/mo line item to issue keys. A single payment secures your infrastructure forever — no usage spikes, no monthly invoices.</p>
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">Zero External SaaS</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">Runs directly inside your Python application and PostgreSQL database. No third-party network round trips, no monthly cloud SaaS bills.</p>
             </div>
         </div>
-        <!-- Feature 2: Zero-Bloat -->
+        <!-- Feature 2: Zero Gateway Bloat -->
         <div class="reveal-on-scroll bg-[#141414] border border-[#1F1F1F] rounded-xl p-8 flex flex-col justify-between h-full hover:bg-[#1A1A1A] hover:border-[#444] hover:shadow-[0_0_30px_rgba(255,255,255,0.03)] transition-all duration-300 group" style="transition-delay: 80ms;">
             <div>
                 <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-primary">speed</span>
                 </div>
                 <h3 class="font-headline-sm text-headline-sm text-primary mb-3">Zero Gateway Bloat</h3>
-                <p class="font-body-md text-body-md text-on-surface-variant">Your keys never transit through third-party proxies. Hashed with bcrypt locally in under 3ms. No DNS changes, no envoy sidecars.</p>
+                <p class="font-body-md text-body-md text-on-surface-variant">Your keys never transit through third-party proxies. Hashed with salted SHA-256 in-process. No DNS changes, no envoy sidecars.</p>
             </div>
         </div>
-        <!-- Feature 3: AI Agent -->
+        <!-- Feature 3: AI Agent Ready -->
         <div class="reveal-on-scroll bg-[#141414] border border-[#1F1F1F] rounded-xl p-8 flex flex-col justify-between h-full hover:bg-[#1A1A1A] hover:border-[#10B981]/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.08)] transition-all duration-300 group" style="transition-delay: 160ms;">
             <div>
                 <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:scale-105 transition-transform">
                     <span class="material-symbols-outlined text-tertiary-fixed-dim">smart_toy</span>
                 </div>
                 <h3 class="font-headline-sm text-headline-sm text-primary mb-3">AI Agent Ready</h3>
-                <p class="font-body-md text-body-md text-on-surface-variant">Handing keys to AI agents or scripts? Issue scoped, short-lived keys programmatically and revoke them in one millisecond call if compromised.</p>
+                <p class="font-body-md text-body-md text-on-surface-variant">Handing keys to AI agents or scripts? Issue scoped, short-lived keys programmatically and revoke them with immediate database revocation.</p>
             </div>
         </div>
     </div>
@@ -314,10 +304,10 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
                 <span class="material-symbols-outlined text-[14px] text-tertiary-fixed-dim">compare_arrows</span> Honest Comparison
             </div>
             <h2 class="font-display-lg text-3xl sm:text-4xl text-primary font-bold tracking-tight mb-4">
-                Why not just use the existing platforms?
+                Why not just use external platforms?
             </h2>
             <p class="font-body-md text-body-md text-on-surface-variant">
-                Platforms like Unkey or Kong are moving upmarket toward enterprise gateways. If you just need clean key auth without the platform overhead, here's how they compare.
+                Platforms like Unkey or Kong require routing your API traffic through external gateways. If you need clean key auth inside your existing database, here is how they compare.
             </p>
         </div>
 
@@ -333,20 +323,20 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
                                     <span class="w-2 h-2 rounded-full bg-[#10B981]"></span> keyed
                                 </div>
                             </th>
-                            <th class="py-4 px-6 font-label-sm text-xs text-outline uppercase tracking-wider w-1/3">Enterprise Platforms</th>
+                            <th class="py-4 px-6 font-label-sm text-xs text-outline uppercase tracking-wider w-1/3">External Gateways</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#1F1F1F] font-body-md text-sm">
-                        <!-- Row 1: Pricing -->
+                        <!-- Row 1: Hosting & Control -->
                         <tr class="hover:bg-surface-container/40 transition-colors">
                             <td class="py-4 px-6 font-medium text-white flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[18px] text-outline">payments</span> Pricing
+                                <span class="material-symbols-outlined text-[18px] text-outline">dns</span> Hosting &amp; Control
                             </td>
                             <td class="py-4 px-6 text-[#4edea3] font-semibold bg-[#10B981]/5 border-x border-[#1F1F1F]">
-                                Pay once (LTD deal) &bull; $0/month forever
+                                Self-hosted in your PostgreSQL database
                             </td>
                             <td class="py-4 px-6 text-on-surface-variant">
-                                $20–$50/mo subscription + usage overages
+                                External cloud proxy &amp; remote database
                             </td>
                         </tr>
                         <!-- Row 2: Setup -->
@@ -355,7 +345,7 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
                                 <span class="material-symbols-outlined text-[18px] text-outline">terminal</span> Integration
                             </td>
                             <td class="py-4 px-6 text-white font-medium bg-[#10B981]/5 border-x border-[#1F1F1F]">
-                                <code class="font-code-md text-xs bg-[#1F1F1F] px-2 py-0.5 rounded text-[#98c379]">npm i @keyed/sdk</code> &bull; 3 lines of code
+                                <code class="font-code-md text-xs bg-[#1F1F1F] px-2 py-0.5 rounded text-[#98c379]">pip install keyed-api-auth</code>
                             </td>
                             <td class="py-4 px-6 text-on-surface-variant">
                                 DNS routing, API gateways, proxy configuration
@@ -379,10 +369,10 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
                                 <span class="material-symbols-outlined text-[18px] text-outline">person</span> Target
                             </td>
                             <td class="py-4 px-6 text-white font-medium bg-[#10B981]/5 border-x border-[#1F1F1F]">
-                                Solo devs, indie hackers &amp; side projects
+                                FastAPI &amp; Python backend developers
                             </td>
                             <td class="py-4 px-6 text-on-surface-variant">
-                                Engineering teams &amp; enterprise DevOps
+                                Enterprise DevOps &amp; cloud infrastructure teams
                             </td>
                         </tr>
                         <!-- Row 5: AI Agents -->
@@ -391,7 +381,7 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
                                 <span class="material-symbols-outlined text-[18px] text-outline">smart_toy</span> AI Agent Keys
                             </td>
                             <td class="py-4 px-6 text-[#4edea3] font-semibold bg-[#10B981]/5 border-x border-[#1F1F1F]">
-                                Scoped, short-lived, 1-call revocation
+                                Scoped, short-lived, immediate revocation
                             </td>
                             <td class="py-4 px-6 text-on-surface-variant">
                                 Heavy multi-tenant enterprise audit platforms
@@ -405,11 +395,11 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
         <!-- Secondary Bottom Call To Action -->
         <div class="mt-12 p-8 rounded-xl bg-gradient-to-r from-surface-container-low via-[#141414] to-surface-container-low border border-outline-variant/30 text-center flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div class="text-left">
-                <h3 class="font-headline-sm text-xl text-primary font-semibold mb-1">Want key auth without another monthly bill?</h3>
-                <p class="font-body-md text-sm text-on-surface-variant">Join the waitlist to lock in early access and the pre-launch LTD deal.</p>
+                <h3 class="font-headline-sm text-xl text-primary font-semibold mb-1">Need key auth without an external gateway?</h3>
+                <p class="font-body-md text-sm text-on-surface-variant">Join the early access list to test and integrate keyed.</p>
             </div>
             <button onclick="document.getElementById('email-input').focus(); window.scrollTo({top: 0, behavior: 'smooth'});" class="bg-primary text-surface-container-lowest font-body-md font-semibold px-6 py-3 rounded-lg hover:bg-primary-container transition-all whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.1)] active:scale-95">
-                Join the Waitlist
+                Get Early Access
             </button>
         </div>
     </div>
@@ -421,7 +411,7 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
         keyed
     </div>
     <p class="font-label-sm text-sm text-on-surface-variant text-center md:text-right">
-        &copy; 2026 keyed &bull; API keys done right, once.
+        &copy; 2026 keyed &bull; Local FastAPI authentication for generated API keys.
     </p>
 </footer>
 
@@ -547,48 +537,32 @@ auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span 
         });
     });
 
-    // Language switcher tabs (TS / Python) with smooth transition
-    const tabTs = document.getElementById('tab-ts');
-    const tabPy = document.getElementById('tab-py');
-    const codeTs = document.getElementById('code-ts-container');
-    const codePy = document.getElementById('code-py-container');
-
-    function switchTab(activeTab, inactiveTab, showPane, hidePane, lang) {
-        activeTab.classList.add('text-white', 'bg-[#1F1F1F]');
-        activeTab.classList.remove('text-[#777]');
-        inactiveTab.classList.remove('text-white', 'bg-[#1F1F1F]');
-        inactiveTab.classList.add('text-[#777]');
-
-        hidePane.classList.add('hidden');
-        showPane.classList.remove('hidden');
-        showPane.classList.add('entering');
-        requestAnimationFrame(() => {
-            showPane.classList.remove('entering');
-        });
-
-        if (window.posthog) {
-            posthog.capture('code_tab_switched', { language: lang });
-        }
-    }
-
-    tabTs.addEventListener('click', () => switchTab(tabTs, tabPy, codeTs, codePy, 'typescript'));
-    tabPy.addEventListener('click', () => switchTab(tabPy, tabTs, codePy, codeTs, 'python'));
-
     // Copy code snippet functionality
     const copyBtn = document.getElementById('copy-btn');
     const copyText = document.getElementById('copy-text');
     
-    const tsCode = `import { keyed } from '@keyed/sdk';\n\nconst auth = new keyed(process.env.KEYED_SECRET);\n\n/* That's your whole auth layer: hash check, rate limit, scope validation */\nconst { valid, scope, remaining } = await auth.verify(req.headers['x-api-key']);\nif (!valid) return new Response('Unauthorized', { status: 401 });`;
-    
-    const pyCode = `from keyed import KeyedAuth\n\nauth = KeyedAuth(secret_key=os.getenv('KEYED_SECRET'))\n\n# FastAPI / Flask dependency — verified in <3ms\n@app.get("/api/data")\nasync def get_data(api_key: str = Security(api_key_header)):\n    result = await auth.verify_async(api_key)\n    if not result.is_valid:\n        raise HTTPException(status_code=401, detail="Invalid key")`;
+    const pyCode = `import os
+from fastapi import Depends, FastAPI
+from keyed import Keyed
+from keyed.core.models import AuthenticatedAPIKey
+
+app = FastAPI()
+keyed = Keyed(os.environ["KEYED_DATABASE_URL"])
+
+# FastAPI dependency — verified in-process against PostgreSQL
+@app.get("/api/documents")
+async def get_documents(
+    principal: AuthenticatedAPIKey = Depends(
+        keyed.auth.require_scopes("documents:read")
+    ),
+) -> dict[str, str]:
+    return {"tenant_id": str(principal.tenant_id)}`;
 
     copyBtn.addEventListener('click', function() {
-        const isPy = codeTs.classList.contains('hidden');
-        const textToCopy = isPy ? pyCode : tsCode;
-        navigator.clipboard.writeText(textToCopy).then(function() {
+        navigator.clipboard.writeText(pyCode).then(function() {
             copyText.textContent = 'copied!';
             if (window.posthog) {
-                posthog.capture('code_snippet_copied', { language: isPy ? 'python' : 'typescript' });
+                posthog.capture('code_snippet_copied', { language: 'python' });
             }
             setTimeout(function() { copyText.textContent = 'copy'; }, 2000);
         });
