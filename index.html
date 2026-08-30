@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>keyed — API keys, done right, once.</title>
+<meta name="description" content="Hash, scope, rate-limit, and revoke API keys in 3 lines of code. Pay once, own it forever. Zero subscriptions, zero gateway bloat."/>
+<meta property="og:title" content="keyed — API keys, done right, once."/>
+<meta property="og:description" content="Stop paying $30/mo just to issue API keys. 3 lines of code, hashed locally, rate-limited, revocable. One-time payment at launch."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "inverse-surface": "#e5e2e1",
+                    "background": "#131313",
+                    "surface-dim": "#131313",
+                    "secondary": "#adc6ff",
+                    "tertiary": "#ffffff",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-container": "#6ffbbe",
+                    "on-secondary-fixed-variant": "#004395",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "inverse-primary": "#5d5f5f",
+                    "on-secondary": "#002e6a",
+                    "surface-container-lowest": "#0e0e0e",
+                    "tertiary-fixed": "#6ffbbe",
+                    "surface-container-high": "#2a2a2a",
+                    "surface-container-highest": "#353534",
+                    "primary-fixed-dim": "#c6c6c7",
+                    "on-background": "#e5e2e1",
+                    "primary": "#ffffff",
+                    "inverse-on-surface": "#313030",
+                    "outline-variant": "#444748",
+                    "outline": "#8e9192",
+                    "error": "#ffb4ab",
+                    "on-primary-fixed-variant": "#454747",
+                    "on-primary": "#2f3131",
+                    "on-error": "#690005",
+                    "surface": "#131313",
+                    "secondary-container": "#0566d9",
+                    "on-tertiary": "#003824",
+                    "on-surface-variant": "#c4c7c8",
+                    "on-tertiary-container": "#00734e",
+                    "primary-container": "#e2e2e2",
+                    "on-tertiary-fixed": "#002113",
+                    "on-secondary-fixed": "#001a42",
+                    "surface-bright": "#3a3939",
+                    "on-surface": "#e5e2e1",
+                    "primary-fixed": "#e2e2e2",
+                    "on-secondary-container": "#e6ecff",
+                    "surface-container-low": "#1c1b1b",
+                    "on-primary-fixed": "#1a1c1c",
+                    "surface-container": "#201f1f",
+                    "secondary-fixed": "#d8e2ff",
+                    "surface-variant": "#353534",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "surface-tint": "#c6c6c7",
+                    "on-primary-container": "#636565",
+                    "error-container": "#93000a"
+                },
+                borderRadius: {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "9999px"
+                },
+                spacing: {
+                    "unit": "4px",
+                    "stack-gap-md": "16px",
+                    "stack-gap-lg": "32px",
+                    "stack-gap-sm": "8px",
+                    "container-padding": "24px",
+                    "gutter": "16px"
+                },
+                fontFamily: {
+                    "code-md": ["JetBrains Mono", "monospace"],
+                    "headline-sm": ["Geist", "sans-serif"],
+                    "body-md": ["Geist", "sans-serif"],
+                    "display-lg": ["Geist", "sans-serif"],
+                    "body-lg": ["Geist", "sans-serif"],
+                    "label-sm": ["JetBrains Mono", "monospace"],
+                    "headline-md": ["Geist", "sans-serif"]
+                },
+                fontSize: {
+                    "code-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                    "headline-sm": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                    "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                    "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                }
+            }
+        }
+    }
+</script>
+<!-- PostHog Analytics -->
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p=t.createElement("script"),p.type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_rVonC74YoeDqWpk8wFVJ7NQcUG2EZkTwYYq8EFqCrohy', {
+        api_host: 'https://us.i.posthog.com',
+        person_profiles: 'identified_only'
+    });
+</script>
+<style>
+    body { background-color: #131313; color: #e5e2e1; font-family: 'Geist', sans-serif; }
+    
+    @keyframes heroBreathe {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+        50% { transform: translate(-50%, -50%) scale(1.12); opacity: 0.95; }
+    }
+    .hero-glow {
+        position: absolute;
+        top: 25%;
+        left: 50%;
+        width: 850px;
+        height: 650px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle at center, rgba(111, 251, 190, 0.09) 0%, rgba(59, 130, 246, 0.04) 40%, rgba(19, 19, 19, 0) 70%);
+        z-index: 0;
+        animation: heroBreathe 10s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .reveal-on-scroll {
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 600ms cubic-bezier(0.23, 1, 0.32, 1), transform 600ms cubic-bezier(0.23, 1, 0.32, 1);
+        will-change: opacity, transform;
+    }
+    .reveal-on-scroll.is-revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    @keyframes springSuccess {
+        0% { transform: scale(0.96) translateY(6px); opacity: 0; }
+        60% { transform: scale(1.015) translateY(-1px); opacity: 1; }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .animate-spring-success {
+        animation: springSuccess 420ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+
+    .code-pane {
+        transition: opacity 220ms cubic-bezier(0.23, 1, 0.32, 1), transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .code-pane.entering {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    .badge-shimmer {
+        background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.03) 100%);
+        background-size: 200% 100%;
+        animation: shimmer 5s infinite linear;
+    }
+</style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-tertiary-fixed-dim selection:text-surface-container-lowest relative overflow-x-hidden">
+
+<!-- Canvas for particle confetti celebration -->
+<canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-40 flex justify-between items-center px-container-padding py-4 max-w-[1280px] mx-auto bg-background/80 backdrop-blur-md border-b border-outline-variant/30 left-1/2 -translate-x-1/2">
+    <a class="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity" href="#">
+        keyed
+    </a>
+    <div class="flex items-center gap-4">
+        <a href="./docs/" class="font-body-md text-sm text-on-surface-variant hover:text-primary transition-colors">Docs</a>
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high border border-outline-variant/30 font-label-sm text-xs text-on-surface-variant badge-shimmer">
+            <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span> pre-launch &bull; founding LTD
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center justify-center pt-32 pb-24 px-container-padding relative overflow-hidden">
+    <!-- Breathing Hero Glow -->
+    <div class="hero-glow"></div>
+
+    <!-- Hero Section -->
+    <div class="max-w-[840px] text-center mb-stack-gap-lg flex flex-col items-center z-10">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high/90 border border-outline-variant/30 mb-6 font-label-sm text-label-sm text-on-surface-variant backdrop-blur-sm shadow-sm hover:border-outline-variant/60 transition-colors">
+            <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span> Pay once. Own forever. Zero monthly subscription.
+        </div>
+        <h1 class="font-display-lg text-display-lg text-primary mb-6 drop-shadow-sm text-4xl sm:text-5xl md:text-[52px] tracking-tight">
+            API keys, done <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-[#adc6ff]">right</span>, once.
+        </h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-[620px] mx-auto mb-10 leading-relaxed text-base sm:text-lg">
+            Stop adding another $30/mo line item to your stack just to issue keys. Hash, verify, rate-limit, and revoke in 3 lines of code — with zero gateway bloat.
+        </p>
+
+        <!-- Waitlist Form Section -->
+        <div class="w-full max-w-md mx-auto">
+            <form id="waitlist-form" action="https://formspree.io/f/mqpkzwyn" method="POST" class="flex flex-col sm:flex-row gap-2 relative">
+                <input id="email-input" name="email" class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 font-body-md text-primary placeholder:text-outline focus:outline-none focus:border-tertiary-fixed focus:ring-1 focus:ring-tertiary-fixed transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" placeholder="you@project.dev" required type="email" autocomplete="email"/>
+                <button id="submit-btn" class="bg-primary text-surface-container-lowest font-body-md font-medium px-6 py-3 rounded-lg hover:bg-primary-container transition-all whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.25)] active:scale-[0.97] flex items-center justify-center gap-2 group" type="submit">
+                    <span>Get Early Access</span>
+                    <span class="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                </button>
+            </form>
+
+            <!-- Clean Success Message -->
+            <div id="success-box" class="hidden text-center bg-[#052E16] border border-[#14532D] text-[#4edea3] rounded-lg p-4 font-body-md shadow-lg animate-spring-success">
+                <p class="font-medium flex items-center justify-center gap-2 text-white text-base">
+                    <span class="text-[#4edea3] text-lg font-bold">✓</span> You're on the waitlist. We'll email you when it ships.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3 Lines of Code Section -->
+    <div class="w-full max-w-[820px] mt-12 z-10 reveal-on-scroll">
+        <div class="bg-[#000000] border border-[#1F1F1F] rounded-xl overflow-hidden shadow-2xl relative group hover:border-[#333] transition-colors">
+            <!-- Window Controls & Tabs -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-[#1F1F1F] bg-[#0A0A0A]">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#333]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#333]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#333]"></div>
+                    <div class="flex items-center ml-4 gap-1">
+                        <button id="tab-ts" class="px-2.5 py-1 rounded font-label-sm text-xs text-white bg-[#1F1F1F] transition-all">middleware.ts</button>
+                        <button id="tab-py" class="px-2.5 py-1 rounded font-label-sm text-xs text-[#777] hover:text-white transition-all">auth.py</button>
+                    </div>
+                </div>
+                <button id="copy-btn" class="text-[#666] hover:text-primary transition-all p-1.5 rounded-md hover:bg-[#1A1A1A] flex items-center gap-1 font-label-sm text-xs active:scale-95" title="Copy code">
+                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                    <span id="copy-text">copy</span>
+                </button>
+            </div>
+
+            <!-- Code TS snippet -->
+            <div id="code-ts-container" class="code-pane p-6 overflow-x-auto relative">
+                <pre class="font-code-md text-code-md leading-loose"><code class="text-[#e5e2e1]"><span class="text-[#c678dd]">import</span> { keyed } <span class="text-[#c678dd]">from</span> <span class="text-[#98c379]'@keyed/sdk'</span>;
+
+<span class="text-[#c678dd]">const</span> auth = <span class="text-[#e5c07b]">new</span> <span class="text-[#61afef]">keyed</span>(process.env.<span class="text-[#e06c75]">KEYED_SECRET</span>);
+
+<span class="text-[#5c6370]">/* That's your whole auth layer: hash check, rate limit, scope validation */</span>
+<span class="text-[#c678dd]">const</span> { valid, scope, remaining } = <span class="text-[#c678dd]">await</span> auth.<span class="text-[#61afef]">verify</span>(req.headers[<span class="text-[#98c379]'x-api-key'</span>]);
+<span class="text-[#c678dd]">if</span> (!valid) <span class="text-[#c678dd]">return</span> <span class="text-[#e5c07b]">new</span> <span class="text-[#61afef]">Response</span>(<span class="text-[#98c379]'Unauthorized'</span>, { status: <span class="text-[#d19a66]">401</span> });</code></pre>
+            </div>
+
+            <!-- Code Python snippet -->
+            <div id="code-py-container" class="code-pane p-6 overflow-x-auto relative hidden">
+                <pre class="font-code-md text-code-md leading-loose"><code class="text-[#e5e2e1]"><span class="text-[#c678dd]">from</span> keyed <span class="text-[#c678dd]">import</span> KeyedAuth
+
+auth = <span class="text-[#61afef]">KeyedAuth</span>(secret_key=os.getenv(<span class="text-[#98c379]'KEYED_SECRET'</span>))
+
+<span class="text-[#5c6370]"># FastAPI / Flask dependency — verified in <3ms</span>
+<span class="text-[#e5c07b]">@app</span>.<span class="text-[#61afef]">get</span>(<span class="text-[#98c379]"/api/data"</span>)
+<span class="text-[#c678dd]">async def</span> <span class="text-[#61afef]">get_data</span>(api_key: str = Security(api_key_header)):
+    result = <span class="text-[#c678dd]">await</span> auth.<span class="text-[#61afef]">verify_async</span>(api_key)
+    <span class="text-[#c678dd]">if not</span> result.is_valid:
+        <span class="text-[#c678dd]">raise</span> <span class="text-[#61afef]">HTTPException</span>(status_code=<span class="text-[#d19a66]">401</span>, detail=<span class="text-[#98c379]"Invalid key"</span>)</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Bento Grid -->
+    <div class="w-full max-w-[1000px] mt-28 z-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Feature 1: Pay Once -->
+        <div class="reveal-on-scroll bg-surface-container-low border-[2px] border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between h-full relative overflow-hidden group hover:border-[#3B82F6]/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] transition-all duration-300">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/10 to-[#10B981]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <div>
+                <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined text-tertiary-fixed-dim">credit_card_off</span>
+                </div>
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">Pay Once, Own Forever</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">No $25-50/mo line item to issue keys. A single payment secures your infrastructure forever — no usage spikes, no monthly invoices.</p>
+            </div>
+        </div>
+        <!-- Feature 2: Zero-Bloat -->
+        <div class="reveal-on-scroll bg-[#141414] border border-[#1F1F1F] rounded-xl p-8 flex flex-col justify-between h-full hover:bg-[#1A1A1A] hover:border-[#444] hover:shadow-[0_0_30px_rgba(255,255,255,0.03)] transition-all duration-300 group" style="transition-delay: 80ms;">
+            <div>
+                <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined text-primary">speed</span>
+                </div>
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">Zero Gateway Bloat</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">Your keys never transit through third-party proxies. Hashed with bcrypt locally in under 3ms. No DNS changes, no envoy sidecars.</p>
+            </div>
+        </div>
+        <!-- Feature 3: AI Agent -->
+        <div class="reveal-on-scroll bg-[#141414] border border-[#1F1F1F] rounded-xl p-8 flex flex-col justify-between h-full hover:bg-[#1A1A1A] hover:border-[#10B981]/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.08)] transition-all duration-300 group" style="transition-delay: 160ms;">
+            <div>
+                <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined text-tertiary-fixed-dim">smart_toy</span>
+                </div>
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-3">AI Agent Ready</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">Handing keys to AI agents or scripts? Issue scoped, short-lived keys programmatically and revoke them in one millisecond call if compromised.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Section: Why not just use the others? -->
+    <div class="w-full max-w-[1000px] mt-28 z-10 reveal-on-scroll">
+        <div class="text-center max-w-[620px] mx-auto mb-12">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 mb-4 font-label-sm text-xs text-on-surface-variant">
+                <span class="material-symbols-outlined text-[14px] text-tertiary-fixed-dim">compare_arrows</span> Honest Comparison
+            </div>
+            <h2 class="font-display-lg text-3xl sm:text-4xl text-primary font-bold tracking-tight mb-4">
+                Why not just use the existing platforms?
+            </h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">
+                Platforms like Unkey or Kong are moving upmarket toward enterprise gateways. If you just need clean key auth without the platform overhead, here's how they compare.
+            </p>
+        </div>
+
+        <!-- Comparison Table Card -->
+        <div class="bg-[#141414] border border-[#1F1F1F] rounded-xl overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-[#1F1F1F] bg-[#0A0A0A]">
+                            <th class="py-4 px-6 font-label-sm text-xs text-outline uppercase tracking-wider w-1/3">Criteria</th>
+                            <th class="py-4 px-6 font-label-sm text-xs text-[#4edea3] uppercase tracking-wider bg-[#10B981]/5 border-x border-[#1F1F1F] w-1/3">
+                                <div class="flex items-center gap-2 font-bold">
+                                    <span class="w-2 h-2 rounded-full bg-[#10B981]"></span> keyed
+                                </div>
+                            </th>
+                            <th class="py-4 px-6 font-label-sm text-xs text-outline uppercase tracking-wider w-1/3">Enterprise Platforms</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1F1F1F] font-body-md text-sm">
+                        <!-- Row 1: Pricing -->
+                        <tr class="hover:bg-surface-container/40 transition-colors">
+                            <td class="py-4 px-6 font-medium text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-outline">payments</span> Pricing
+                            </td>
+                            <td class="py-4 px-6 text-[#4edea3] font-semibold bg-[#10B981]/5 border-x border-[#1F1F1F]">
+                                Pay once (LTD deal) &bull; $0/month forever
+                            </td>
+                            <td class="py-4 px-6 text-on-surface-variant">
+                                $20–$50/mo subscription + usage overages
+                            </td>
+                        </tr>
+                        <!-- Row 2: Setup -->
+                        <tr class="hover:bg-surface-container/40 transition-colors">
+                            <td class="py-4 px-6 font-medium text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-outline">terminal</span> Integration
+                            </td>
+                            <td class="py-4 px-6 text-white font-medium bg-[#10B981]/5 border-x border-[#1F1F1F]">
+                                <code class="font-code-md text-xs bg-[#1F1F1F] px-2 py-0.5 rounded text-[#98c379]">npm i @keyed/sdk</code> &bull; 3 lines of code
+                            </td>
+                            <td class="py-4 px-6 text-on-surface-variant">
+                                DNS routing, API gateways, proxy configuration
+                            </td>
+                        </tr>
+                        <!-- Row 3: Lock-in -->
+                        <tr class="hover:bg-surface-container/40 transition-colors">
+                            <td class="py-4 px-6 font-medium text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-outline">lock_open</span> Lock-in
+                            </td>
+                            <td class="py-4 px-6 text-white font-medium bg-[#10B981]/5 border-x border-[#1F1F1F]">
+                                Zero lock-in &bull; Key hashes stay in your database
+                            </td>
+                            <td class="py-4 px-6 text-on-surface-variant">
+                                Proprietary vendor infrastructure &amp; traffic dependency
+                            </td>
+                        </tr>
+                        <!-- Row 4: Target -->
+                        <tr class="hover:bg-surface-container/40 transition-colors">
+                            <td class="py-4 px-6 font-medium text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-outline">person</span> Target
+                            </td>
+                            <td class="py-4 px-6 text-white font-medium bg-[#10B981]/5 border-x border-[#1F1F1F]">
+                                Solo devs, indie hackers &amp; side projects
+                            </td>
+                            <td class="py-4 px-6 text-on-surface-variant">
+                                Engineering teams &amp; enterprise DevOps
+                            </td>
+                        </tr>
+                        <!-- Row 5: AI Agents -->
+                        <tr class="hover:bg-surface-container/40 transition-colors">
+                            <td class="py-4 px-6 font-medium text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-outline">smart_toy</span> AI Agent Keys
+                            </td>
+                            <td class="py-4 px-6 text-[#4edea3] font-semibold bg-[#10B981]/5 border-x border-[#1F1F1F]">
+                                Scoped, short-lived, 1-call revocation
+                            </td>
+                            <td class="py-4 px-6 text-on-surface-variant">
+                                Heavy multi-tenant enterprise audit platforms
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Secondary Bottom Call To Action -->
+        <div class="mt-12 p-8 rounded-xl bg-gradient-to-r from-surface-container-low via-[#141414] to-surface-container-low border border-outline-variant/30 text-center flex flex-col items-center justify-between gap-6 sm:flex-row">
+            <div class="text-left">
+                <h3 class="font-headline-sm text-xl text-primary font-semibold mb-1">Want key auth without another monthly bill?</h3>
+                <p class="font-body-md text-sm text-on-surface-variant">Join the waitlist to lock in early access and the pre-launch LTD deal.</p>
+            </div>
+            <button onclick="document.getElementById('email-input').focus(); window.scrollTo({top: 0, behavior: 'smooth'});" class="bg-primary text-surface-container-lowest font-body-md font-semibold px-6 py-3 rounded-lg hover:bg-primary-container transition-all whitespace-nowrap shadow-[0_0_15px_rgba(255,255,255,0.1)] active:scale-95">
+                Join the Waitlist
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full px-container-padding py-stack-gap-lg flex flex-col md:flex-row justify-between items-center gap-stack-gap-md max-w-[1280px] mx-auto border-t border-outline-variant/20 bg-background">
+    <div class="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight">
+        keyed
+    </div>
+    <p class="font-label-sm text-sm text-on-surface-variant text-center md:text-right">
+        &copy; 2026 keyed &bull; API keys done right, once.
+    </p>
+</footer>
+
+<script>
+    // Particle confetti animation engine (Pure Vanilla JS, 0 dependencies)
+    function launchConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#6ffbbe', '#4edea3', '#ffffff', '#adc6ff', '#3B82F6', '#e2e2e2'];
+        const count = 75;
+
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: canvas.width / 2 + (Math.random() - 0.5) * 100,
+                y: canvas.height / 2 - 80,
+                vx: (Math.random() - 0.5) * 14,
+                vy: (Math.random() - 0.9) * 16,
+                size: Math.random() * 6 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                rotationSpeed: (Math.random() - 0.5) * 12,
+                opacity: 1,
+                decay: Math.random() * 0.015 + 0.01
+            });
+        }
+
+        let animationFrame;
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let active = 0;
+
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.35;
+                p.vx *= 0.98;
+                p.rotation += p.rotationSpeed;
+                p.opacity -= p.decay;
+
+                if (p.opacity > 0) {
+                    active++;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.globalAlpha = Math.max(0, p.opacity);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+                    ctx.restore();
+                }
+            });
+
+            if (active > 0) {
+                animationFrame = requestAnimationFrame(render);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                cancelAnimationFrame(animationFrame);
+            }
+        }
+        render();
+    }
+
+    // Scroll reveal observer
+    const revealElements = document.querySelectorAll('.reveal-on-scroll');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+
+    revealElements.forEach(el => observer.observe(el));
+
+    // Form submission via fetch to Formspree
+    const form = document.getElementById('waitlist-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const successBox = document.getElementById('success-box');
+    const emailInput = document.getElementById('email-input');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <span class="inline-block w-4 h-4 border-2 border-surface-container-lowest border-t-transparent rounded-full animate-spin"></span>
+            <span>Securing Spot...</span>
+        `;
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error(res.status);
+            
+            form.classList.add('hidden');
+            successBox.classList.remove('hidden');
+            launchConfetti();
+
+            if (window.posthog) {
+                const userEmail = emailInput ? emailInput.value : '';
+                if (userEmail) posthog.identify(userEmail);
+                posthog.capture('waitlist_signup_success', {
+                    email: userEmail,
+                    source: new URLSearchParams(window.location.search).get('utm_source') || 'direct'
+                });
+            }
+        })
+        .catch(function(err) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                <span>Get Early Access</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            `;
+            alert('Something went wrong. Please try again.');
+        });
+    });
+
+    // Language switcher tabs (TS / Python) with smooth transition
+    const tabTs = document.getElementById('tab-ts');
+    const tabPy = document.getElementById('tab-py');
+    const codeTs = document.getElementById('code-ts-container');
+    const codePy = document.getElementById('code-py-container');
+
+    function switchTab(activeTab, inactiveTab, showPane, hidePane, lang) {
+        activeTab.classList.add('text-white', 'bg-[#1F1F1F]');
+        activeTab.classList.remove('text-[#777]');
+        inactiveTab.classList.remove('text-white', 'bg-[#1F1F1F]');
+        inactiveTab.classList.add('text-[#777]');
+
+        hidePane.classList.add('hidden');
+        showPane.classList.remove('hidden');
+        showPane.classList.add('entering');
+        requestAnimationFrame(() => {
+            showPane.classList.remove('entering');
+        });
+
+        if (window.posthog) {
+            posthog.capture('code_tab_switched', { language: lang });
+        }
+    }
+
+    tabTs.addEventListener('click', () => switchTab(tabTs, tabPy, codeTs, codePy, 'typescript'));
+    tabPy.addEventListener('click', () => switchTab(tabPy, tabTs, codePy, codeTs, 'python'));
+
+    // Copy code snippet functionality
+    const copyBtn = document.getElementById('copy-btn');
+    const copyText = document.getElementById('copy-text');
+    
+    const tsCode = `import { keyed } from '@keyed/sdk';\n\nconst auth = new keyed(process.env.KEYED_SECRET);\n\n/* That's your whole auth layer: hash check, rate limit, scope validation */\nconst { valid, scope, remaining } = await auth.verify(req.headers['x-api-key']);\nif (!valid) return new Response('Unauthorized', { status: 401 });`;
+    
+    const pyCode = `from keyed import KeyedAuth\n\nauth = KeyedAuth(secret_key=os.getenv('KEYED_SECRET'))\n\n# FastAPI / Flask dependency — verified in <3ms\n@app.get("/api/data")\nasync def get_data(api_key: str = Security(api_key_header)):\n    result = await auth.verify_async(api_key)\n    if not result.is_valid:\n        raise HTTPException(status_code=401, detail="Invalid key")`;
+
+    copyBtn.addEventListener('click', function() {
+        const isPy = codeTs.classList.contains('hidden');
+        const textToCopy = isPy ? pyCode : tsCode;
+        navigator.clipboard.writeText(textToCopy).then(function() {
+            copyText.textContent = 'copied!';
+            if (window.posthog) {
+                posthog.capture('code_snippet_copied', { language: isPy ? 'python' : 'typescript' });
+            }
+            setTimeout(function() { copyText.textContent = 'copy'; }, 2000);
+        });
+    });
+</script>
+
+</body>
+</html>

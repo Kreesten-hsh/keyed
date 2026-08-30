@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>API Key Rate Limiting Without an External Gateway or Proxy — keyed</title>
+<meta name="description" content="How to implement sliding window rate limiting directly in application middleware without routing traffic through an external gateway."/>
+<meta property="og:title" content="API Key Rate Limiting Without an External Gateway or Proxy"/>
+<meta property="og:description" content="Learn how sliding window counters work in local middleware, avoiding the recurring costs and network latency of enterprise API gateways."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "background": "#131313",
+                    "surface": "#131313",
+                    "surface-container": "#201f1f",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container-high": "#2a2a2a",
+                    "primary": "#ffffff",
+                    "secondary": "#adc6ff",
+                    "tertiary": "#6ffbbe",
+                    "on-surface": "#e5e2e1",
+                    "on-surface-variant": "#c4c7c8",
+                    "outline-variant": "#444748"
+                },
+                fontFamily: {
+                    "sans": ["Geist", "sans-serif"],
+                    "mono": ["JetBrains Mono", "monospace"]
+                }
+            }
+        }
+    }
+</script>
+<!-- PostHog Analytics -->
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p=t.createElement("script"),p.type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug getPageViewId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_rVonC74YoeDqWpk8wFVJ7NQcUG2EZkTwYYq8EFqCrohy', {
+        api_host: 'https://us.i.posthog.com',
+        person_profiles: 'identified_only'
+    });
+</script>
+<style>
+    body { background-color: #131313; color: #e5e2e1; font-family: 'Geist', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#4edea3] selection:text-black relative">
+
+<!-- Navigation -->
+<nav class="fixed top-0 w-full z-40 flex justify-between items-center px-6 py-4 max-w-[1280px] mx-auto bg-background/80 backdrop-blur-md border-b border-outline-variant/30 left-1/2 -translate-x-1/2">
+    <a class="text-3xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity" href="../index.html">
+        keyed
+    </a>
+    <div class="flex items-center gap-4">
+        <a href="../index.html" class="text-sm font-medium text-on-surface-variant hover:text-white transition-colors">Home</a>
+        <a href="../index.html" class="px-3.5 py-1.5 rounded-lg bg-primary text-black font-semibold text-xs hover:bg-white/90 transition-all">Get Early Access</a>
+    </div>
+</nav>
+
+<!-- Article Container -->
+<main class="flex-grow max-w-[800px] w-full mx-auto pt-32 pb-24 px-6">
+    <div class="mb-8">
+        <a href="../index.html" class="inline-flex items-center gap-1 text-sm text-on-surface-variant hover:text-white transition-colors mb-4">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to keyed
+        </a>
+        <div class="text-xs uppercase tracking-widest text-secondary font-mono mb-2">Architecture</div>
+        <h1 class="text-3xl sm:text-4xl md:text-[42px] font-extrabold text-primary tracking-tight leading-tight mb-4">
+            API key rate limiting without an external gateway or proxy
+        </h1>
+        <p class="text-sm text-on-surface-variant font-mono">Published September 2, 2026 &bull; 5 min read</p>
+    </div>
+
+    <article class="space-y-6 text-on-surface leading-relaxed text-base sm:text-lg">
+        <p>
+            Most API architecture tutorials recommend placing an API gateway or reverse proxy in front of your service to enforce rate limits.
+        </p>
+        <p>
+            While gateways like Kong, Zuplo, or Envoy sidecars work well for enterprise infrastructure, they introduce operational complexity and recurring costs for solo developers and small teams. You need to configure DNS routing, maintain SSL certificates in multiple places, and pay monthly subscription fees for external proxy networks.
+        </p>
+        <p>
+            You can enforce robust, per-key rate limiting directly inside your application middleware using local memory or an existing Redis instance.
+        </p>
+
+        <h2 class="text-2xl font-bold text-white pt-6 pb-2 border-b border-outline-variant/30">
+            The hidden cost of adding a gateway for basic rate limiting
+        </h2>
+        <p>Deploying an external gateway just to inspect an API key header creates several hidden problems:</p>
+        <p>
+            First, it adds external network latency. Every request must pass through a third-party server before reaching your API, adding anywhere from 15 to 80 milliseconds of roundtrip time.
+        </p>
+        <p>
+            Second, it creates an external point of failure. If the gateway provider suffers a routing outage or DNS misconfiguration, your API becomes completely unreachable even if your backend servers are healthy.
+        </p>
+        <p>
+            Third, the pricing model is often misaligned with early-stage products. Most gateway providers charge monthly base fees plus overages per million requests. When you are running small side projects or bootstrapped micro-SaaS tools, these recurring subscriptions accumulate quickly.
+        </p>
+
+        <h2 class="text-2xl font-bold text-white pt-6 pb-2 border-b border-outline-variant/30">
+            How sliding window rate limiting works at the middleware layer
+        </h2>
+        <p>
+            Rate limiting algorithms generally fall into three categories: fixed window, token bucket, and sliding window counter.
+        </p>
+        <p>
+            Fixed window counters reset at fixed boundaries (such as the top of every minute). This creates a vulnerability where a client can send its entire quota at 11:59:59 and another full quota at 12:00:01, effectively doubling the allowed throughput across that boundary.
+        </p>
+        <p>
+            The sliding window counter algorithm fixes this without high memory overhead. It tracks the request count in the previous window and the current window, weighting them proportionally based on the current timestamp.
+        </p>
+
+        <div class="relative group my-4 rounded-lg bg-[#0e0e0e] border border-outline-variant/40 overflow-hidden">
+            <div class="flex justify-between items-center px-4 py-2 bg-[#1c1b1b] border-b border-outline-variant/40 text-xs font-mono text-on-surface-variant">
+                <span>rate-limit.mjs</span>
+                <button onclick="navigator.clipboard.writeText(this.closest('.group').querySelector('pre').innerText); this.textContent='copied!'; setTimeout(()=>this.textContent='copy',2000);" class="text-xs hover:text-white px-2 py-0.5 rounded bg-surface-container">copy</button>
+            </div>
+            <pre class="p-4 font-mono text-sm overflow-x-auto text-[#e5e2e1]"><code>export function createRateLimiter({ limit = 60, windowMs = 60000 }) {
+  const store = new Map();
+
+  return function rateLimitMiddleware(req, res, next) {
+    const key = req.headers['x-api-key'] || req.ip;
+    const now = Date.now();
+    const currentWindowStart = Math.floor(now / windowMs) * windowMs;
+
+    let record = store.get(key);
+    if (!record) {
+      record = { currentStart: currentWindowStart, currentCount: 0, previousCount: 0 };
+      store.set(key, record);
+    }
+
+    // Handle window rollover
+    if (now - record.currentStart >= windowMs) {
+      const isNextImmediateWindow = now - record.currentStart < windowMs * 2;
+      record.previousCount = isNextImmediateWindow ? record.currentCount : 0;
+      record.currentCount = 0;
+      record.currentStart = currentWindowStart;
+    }
+
+    // Calculate sliding estimate
+    const timeElapsedInCurrent = now - record.currentStart;
+    const weight = 1 - (timeElapsedInCurrent / windowMs);
+    const estimatedCount = Math.floor(record.previousCount * weight) + record.currentCount;
+
+    const remaining = Math.max(0, limit - estimatedCount - 1);
+    const resetTime = Math.ceil((record.currentStart + windowMs - now) / 1000);
+
+    res.setHeader('X-RateLimit-Limit', limit);
+    res.setHeader('X-RateLimit-Remaining', remaining);
+    res.setHeader('X-RateLimit-Reset', resetTime);
+
+    if (estimatedCount >= limit) {
+      return res.status(429).json({
+        error: 'Too Many Requests',
+        message: `Rate limit exceeded. Try again in ${resetTime} seconds.`
+      });
+    }
+
+    record.currentCount += 1;
+    next();
+  };
+}</code></pre>
+        </div>
+
+        <h2 class="text-2xl font-bold text-white pt-6 pb-2 border-b border-outline-variant/30">
+            Returning standard rate limit headers
+        </h2>
+        <p>RFC standards and developer expectations require consistent response headers so API clients can handle throttle limits gracefully:</p>
+        <ul class="list-disc pl-6 space-y-2">
+            <li><code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">X-RateLimit-Limit</code>: The maximum number of requests allowed in the current window.</li>
+            <li><code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">X-RateLimit-Remaining</code>: The remaining number of requests allowed for the client in the active window.</li>
+            <li><code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">X-RateLimit-Reset</code>: The number of seconds remaining until the current rate limit window resets.</li>
+        </ul>
+        <p>
+            When a client breaches the limit, return HTTP status code <code class="font-mono text-sm px-1.5 py-0.5 rounded bg-surface-container text-secondary">429 Too Many Requests</code> with a clear JSON error payload indicating when requests can safely resume.
+        </p>
+
+        <!-- CTA Box -->
+        <div class="mt-12 p-8 rounded-xl bg-gradient-to-r from-surface-container-low via-[#141414] to-surface-container-low border border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="text-left">
+                <h3 class="text-xl text-primary font-bold mb-1">Looking for a zero-proxy auth solution?</h3>
+                <p class="text-sm text-on-surface-variant">keyed bundles local key hashing, sliding-window rate limiting, and instant revocation in 3 lines of code for Node.js and Python. One-time purchase, zero monthly invoices.</p>
+            </div>
+            <a href="../index.html" class="bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-white/90 transition-all whitespace-nowrap active:scale-95 shadow-md">
+                Learn About keyed
+            </a>
+        </div>
+    </article>
+</main>
+
+<!-- Footer -->
+<footer class="w-full px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-4 max-w-[1280px] mx-auto border-t border-outline-variant/20 bg-background text-sm text-on-surface-variant">
+    <div class="font-bold text-xl text-white">keyed</div>
+    <p>&copy; 2026 keyed &bull; API keys done right, once.</p>
+</footer>
+
+</body>
+</html>

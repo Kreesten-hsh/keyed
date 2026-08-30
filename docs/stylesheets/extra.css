@@ -1,0 +1,280 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ==========================================================================
+   Global Typography & Layout (Applies to both Light & Dark)
+   ========================================================================== */
+
+:root {
+  --md-text-font: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --md-code-font: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --md-typeset-font-size: 16px;
+  --md-typeset-line-height: 1.6;
+  --md-code-font-size: 14px;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  font-family: var(--md-text-font);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-size: 2.2rem;
+}
+
+.md-typeset h2 {
+  font-size: 1.5rem;
+  padding-bottom: 0.3rem;
+}
+
+.md-header__topic {
+  font-family: var(--md-text-font);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.md-nav__link {
+  font-family: var(--md-text-font);
+  font-size: 15px;
+}
+
+/* ==========================================================================
+   1. LIGHT MODE (body[data-md-color-scheme="default"])
+   Clean, High-Contrast Apple/Vercel-style Crisp Light Palette
+   ========================================================================== */
+
+body[data-md-color-scheme="default"] {
+  --md-default-bg-color: #ffffff;
+  --md-default-bg-color--light: #f8fafc;
+  --md-default-bg-color--lighter: #f1f5f9;
+  --md-default-bg-color--lightest: #e2e8f0;
+
+  --md-default-fg-color: #0f172a;
+  --md-default-fg-color--light: #334155;
+  --md-default-fg-color--lighter: #64748b;
+  --md-default-fg-color--lightest: #94a3b8;
+
+  --md-primary-fg-color: #ffffff;
+  --md-primary-fg-color--light: #f8fafc;
+  --md-primary-fg-color--dark: #f1f5f9;
+  --md-primary-bg-color: #0f172a;
+  --md-primary-bg-color--light: #334155;
+
+  --md-accent-fg-color: #2563eb;
+  --md-accent-fg-color--transparent: rgba(37, 99, 235, 0.1);
+  --md-accent-bg-color: #ffffff;
+
+  --md-code-bg-color: #0f172a;
+  --md-code-fg-color: #f8fafc;
+  --md-code-hl-color: rgba(37, 99, 235, 0.15);
+  --md-code-hl-number-color: #93c5fd;
+  --md-code-hl-string-color: #6ee7b7;
+  --md-code-hl-keyword-color: #93c5fd;
+  --md-code-hl-function-color: #f8fafc;
+  --md-code-hl-name-color: #e2e8f0;
+  --md-code-hl-comment-color: #64748b;
+
+  --md-outline-color: #e2e8f0;
+}
+
+body[data-md-color-scheme="default"] .md-header {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+body[data-md-color-scheme="default"] .md-header__topic,
+body[data-md-color-scheme="default"] .md-header__button {
+  color: #0f172a !important;
+}
+
+body[data-md-color-scheme="default"] .md-search__input {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+body[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: #64748b !important;
+}
+
+body[data-md-color-scheme="default"] .md-search__icon {
+  color: #64748b !important;
+}
+
+body[data-md-color-scheme="default"] .md-sidebar {
+  background-color: #ffffff !important;
+}
+
+body[data-md-color-scheme="default"] .md-nav__title {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+body[data-md-color-scheme="default"] .md-typeset h1,
+body[data-md-color-scheme="default"] .md-typeset h2,
+body[data-md-color-scheme="default"] .md-typeset h3,
+body[data-md-color-scheme="default"] .md-typeset h4 {
+  color: #0f172a !important;
+}
+
+body[data-md-color-scheme="default"] .md-typeset h2 {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body[data-md-color-scheme="default"] .md-nav__link {
+  color: #475569 !important;
+}
+
+body[data-md-color-scheme="default"] .md-nav__link:hover {
+  color: #0f172a !important;
+}
+
+body[data-md-color-scheme="default"] .md-nav__link--active {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+
+/* Light mode inline code */
+body[data-md-color-scheme="default"] .md-typeset code {
+  font-family: var(--md-code-font) !important;
+  font-size: 14px !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+}
+
+/* Light mode code blocks: elegant dark slate container */
+body[data-md-color-scheme="default"] .md-typeset pre > code {
+  font-family: var(--md-code-font) !important;
+  font-size: 14px !important;
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 6px;
+  padding: 1rem;
+  line-height: 1.5;
+}
+
+body[data-md-color-scheme="default"] .md-typeset .admonition,
+body[data-md-color-scheme="default"] .md-typeset details {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px;
+}
+
+
+/* ==========================================================================
+   2. DARK MODE (body[data-md-color-scheme="slate"])
+   Exact DESIGN.md Dark Tokens (#131313)
+   ========================================================================== */
+
+body[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #131313;
+  --md-default-bg-color--light: #1c1b1b;
+  --md-default-bg-color--lighter: #201f1f;
+  --md-default-bg-color--lightest: #2a2a2a;
+
+  --md-default-fg-color: #e5e2e1;
+  --md-default-fg-color--light: #c4c7c8;
+  --md-default-fg-color--lighter: #8e9192;
+  --md-default-fg-color--lightest: #444748;
+
+  --md-primary-fg-color: #131313;
+  --md-primary-fg-color--light: #1c1b1b;
+  --md-primary-fg-color--dark: #0e0e0e;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #e2e2e2;
+
+  --md-accent-fg-color: #adc6ff;
+  --md-accent-fg-color--transparent: rgba(173, 198, 255, 0.1);
+  --md-accent-bg-color: #131313;
+
+  --md-code-bg-color: #1c1b1b;
+  --md-code-fg-color: #e5e2e1;
+  --md-code-hl-color: rgba(173, 198, 255, 0.15);
+  --md-code-hl-number-color: #adc6ff;
+  --md-code-hl-string-color: #6ffbbe;
+  --md-code-hl-keyword-color: #adc6ff;
+  --md-code-hl-function-color: #ffffff;
+  --md-code-hl-name-color: #e5e2e1;
+  --md-code-hl-comment-color: #8e9192;
+
+  --md-outline-color: #444748;
+}
+
+body[data-md-color-scheme="slate"] .md-header {
+  background-color: #131313 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #444748;
+}
+
+body[data-md-color-scheme="slate"] .md-sidebar {
+  background-color: #131313 !important;
+}
+
+body[data-md-color-scheme="slate"] .md-nav__title {
+  background-color: #131313 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+body[data-md-color-scheme="slate"] .md-typeset h1,
+body[data-md-color-scheme="slate"] .md-typeset h2,
+body[data-md-color-scheme="slate"] .md-typeset h3,
+body[data-md-color-scheme="slate"] .md-typeset h4 {
+  color: #ffffff !important;
+}
+
+body[data-md-color-scheme="slate"] .md-typeset h2 {
+  border-bottom: 1px solid #2a2a2a !important;
+}
+
+body[data-md-color-scheme="slate"] .md-nav__link {
+  color: #c4c7c8 !important;
+}
+
+body[data-md-color-scheme="slate"] .md-nav__link--active {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* Dark mode inline code */
+body[data-md-color-scheme="slate"] .md-typeset code {
+  font-family: var(--md-code-font) !important;
+  font-size: 14px !important;
+  background-color: #201f1f !important;
+  color: #e5e2e1 !important;
+  border: 1px solid #444748 !important;
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+}
+
+/* Dark mode code blocks */
+body[data-md-color-scheme="slate"] .md-typeset pre > code {
+  font-family: var(--md-code-font) !important;
+  font-size: 14px !important;
+  background-color: #1c1b1b !important;
+  color: #e5e2e1 !important;
+  border: 1px solid #444748 !important;
+  border-radius: 6px;
+  padding: 1rem;
+  line-height: 1.5;
+}
+
+body[data-md-color-scheme="slate"] .md-typeset .admonition,
+body[data-md-color-scheme="slate"] .md-typeset details {
+  background-color: #1c1b1b !important;
+  border: 1px solid #444748 !important;
+  border-radius: 6px;
+}
