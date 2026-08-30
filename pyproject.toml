@@ -7,6 +7,7 @@ name = "keyed-api-auth"
 version = "0.1.0"
 description = "Local API key authentication and rate limiting for FastAPI"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.15,<2",
