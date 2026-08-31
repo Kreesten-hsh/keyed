@@ -5,10 +5,12 @@ from datetime import UTC, datetime
 from typing import Literal, Protocol
 from uuid import UUID, uuid4
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from keyed.core.errors import InvalidAPIKeyError, RateLimitExceededError
 from keyed.core.hashing import extract_key_prefix, generate_api_key, verify_api_key
 from keyed.core.models import APIKeyRecord, AuthenticatedAPIKey, IssuedAPIKey
-from keyed.core.rate_limit import RateLimitDecision, SlidingWindowRateLimiter
+from keyed.core.rate_limit import RateLimitDecision, RateLimiter
 
 
 class APIKeyRepository(Protocol):
@@ -25,12 +27,14 @@ class APIKeyService:
     def __init__(
         self,
         repository: APIKeyRepository,
-        limiter: SlidingWindowRateLimiter,
+        limiter: RateLimiter,
         *,
+        session: AsyncSession | None = None,
         now: Callable[[], datetime] | None = None,
     ) -> None:
         self._repository = repository
         self._limiter = limiter
+        self._session = session
         self._now = now or (lambda: datetime.now(UTC))
 
     async def issue_key(
@@ -82,14 +86,21 @@ class APIKeyService:
         ):
             raise InvalidAPIKeyError
 
+        if self._session is not None:
+            await self._repository.mark_used(record.id, now)
+
         decision = await self._limiter.check_and_increment(
             record.id,
             limit=record.rate_limit_per_minute,
+            session=self._session,
         )
         if not decision.allowed:
             raise RateLimitExceededError(decision)
 
-        await self._repository.mark_used(record.id, now)
+        if self._session is None:
+            await self._repository.mark_used(record.id, now)
+        elif self._session.in_transaction():
+            await self._session.commit()
         return (
             AuthenticatedAPIKey(
                 key_id=record.id,

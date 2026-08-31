@@ -58,7 +58,6 @@ class SQLAlchemyAPIKeyRepository:
         await self._session.execute(
             update(APIKeyModel).where(APIKeyModel.id == key_id).values(last_used_at=used_at)
         )
-        await self._session.commit()
 
 
 def _to_record(model: APIKeyModel) -> APIKeyRecord:

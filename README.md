@@ -1,6 +1,6 @@
 # keyed
 
-`keyed` is a local FastAPI authentication library for generated API keys. It stores only salted hashes in PostgreSQL, checks scopes, supports immediate revocation and applies an in-process sliding-window rate limit.
+`keyed` is a local FastAPI authentication library for generated API keys. It stores only salted hashes and rate-limit counters in PostgreSQL, checks scopes, supports immediate revocation and applies a sliding-window rate limit.
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -107,7 +107,7 @@ The documentation server will start at `http://127.0.0.1:8000/`. When the API is
 
 ## Rate limiter limitation
 
-The default sliding-window counters live in the application process memory. They reset on server restart and are not shared across multiple processes. Run a single worker process during the beta if strict per-key quotas are required.
+The default sliding-window counters live in PostgreSQL and survive application restarts. Each authentication request locks and updates the counter row in the same database session as the key lookup. The in-memory limiter remains available for isolated unit tests; its counters reset on restart and are not shared across multiple processes.
 
 ## Tests
 

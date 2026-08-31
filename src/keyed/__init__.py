@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import (
 
 from keyed.core.authenticator import SQLAlchemyAPIKeyAuthenticator
 from keyed.core.models import IssuedAPIKey
-from keyed.core.rate_limit import SlidingWindowRateLimiter
+from keyed.core.rate_limit import PostgresRateLimiter
 from keyed.core.service import APIKeyService
 from keyed.db.repository import SQLAlchemyAPIKeyRepository
 from keyed.fastapi import KeyedAuth
@@ -41,7 +41,7 @@ class Keyed:
             session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
 
         self._session_factory = session_factory
-        self._limiter = SlidingWindowRateLimiter()
+        self._limiter = PostgresRateLimiter()
         self.auth = KeyedAuth(SQLAlchemyAPIKeyAuthenticator(self._session_factory, self._limiter))
 
     async def issue_key(
@@ -54,7 +54,11 @@ class Keyed:
         expires_at: datetime | None = None,
     ) -> IssuedAPIKey:
         async with self._session_factory() as session:
-            service = APIKeyService(SQLAlchemyAPIKeyRepository(session), self._limiter)
+            service = APIKeyService(
+                SQLAlchemyAPIKeyRepository(session),
+                self._limiter,
+                session=session,
+            )
             return await service.issue_key(
                 tenant_id=tenant_id,
                 scopes=scopes,
@@ -65,7 +69,11 @@ class Keyed:
 
     async def revoke_key(self, key_id: UUID, tenant_id: UUID) -> bool:
         async with self._session_factory() as session:
-            service = APIKeyService(SQLAlchemyAPIKeyRepository(session), self._limiter)
+            service = APIKeyService(
+                SQLAlchemyAPIKeyRepository(session),
+                self._limiter,
+                session=session,
+            )
             return await service.revoke_key(key_id, tenant_id)
 
     async def close(self) -> None:

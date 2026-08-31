@@ -87,3 +87,21 @@ async def test_non_positive_limit_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="limit"):
         await limiter.check_and_increment(uuid4(), limit=0)
+
+
+def test_in_memory_limiter_uses_asyncio_lock() -> None:
+    limiter = SlidingWindowRateLimiter()
+
+    assert isinstance(limiter._lock, asyncio.Lock)
+
+
+async def test_in_memory_limiter_accepts_and_ignores_session() -> None:
+    limiter = SlidingWindowRateLimiter(clock=FakeClock())
+
+    decision = await limiter.check_and_increment(
+        uuid4(),
+        limit=1,
+        session=None,
+    )
+
+    assert decision.allowed

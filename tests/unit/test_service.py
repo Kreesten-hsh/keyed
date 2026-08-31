@@ -5,10 +5,11 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from keyed.core.errors import InvalidAPIKeyError, RateLimitExceededError
 from keyed.core.models import APIKeyRecord
-from keyed.core.rate_limit import SlidingWindowRateLimiter
+from keyed.core.rate_limit import RateLimitDecision, SlidingWindowRateLimiter
 from keyed.core.scopes import has_required_scopes
 from keyed.core.service import APIKeyService
 
@@ -36,6 +37,25 @@ class InMemoryAPIKeyRepository:
 
     async def mark_used(self, key_id: UUID, used_at: datetime) -> None:
         self.records[key_id] = replace(self.records[key_id], last_used_at=used_at)
+
+
+class RecordingRateLimiter:
+    def __init__(self) -> None:
+        self.session: AsyncSession | None = None
+
+    async def check_and_increment(
+        self,
+        key_id: UUID,
+        *,
+        limit: int,
+        window_seconds: int = 60,
+        session: AsyncSession | None = None,
+    ) -> RateLimitDecision:
+        self.session = session
+        return RateLimitDecision(True, limit, limit - 1, 0)
+
+    def clear(self, key_id: UUID) -> None:
+        return None
 
 
 @pytest.fixture
@@ -115,6 +135,20 @@ async def test_rate_limit_is_applied_per_key(service: APIKeyService) -> None:
 
     with pytest.raises(RateLimitExceededError):
         await service.authenticate(issued.plaintext)
+
+
+async def test_authentication_passes_open_session_to_rate_limiter(
+    repository: InMemoryAPIKeyRepository,
+    now: datetime,
+) -> None:
+    limiter = RecordingRateLimiter()
+    async with AsyncSession() as session:
+        service = APIKeyService(repository, limiter, session=session, now=lambda: now)
+        issued = await service.issue_key(tenant_id=uuid4(), scopes=[])
+
+        await service.authenticate(issued.plaintext)
+
+        assert limiter.session is session
 
 
 async def test_issue_key_rejects_non_positive_rate_limit(service: APIKeyService) -> None:
